@@ -1,0 +1,89 @@
+{
+    "api": {
+        "host": "0.0.0.0:5000",
+        "log_level": 5,
+        "accesskeys": [
+            "vB9zXv6H0Pkzb",
+            "OnamYpBVSRZHd",
+            "ySZFbntnmLKBq",
+            "yn9oyzWzgtBFf",
+            "c2gwEqNbWDNIP"
+        ]
+    },
+    "storage": {
+        "redis": "localhost:2379",
+        "db": 1,
+        "password": ""
+    },
+    "notifier": {
+        "sms": {
+            "unicom_sp": "103905",
+            "unicom_username": "",
+            "unicom_password": ""
+        },
+        "email": {
+            "send": "tuhuayuan@gmail.com"
+        }
+    },
+    "static": {
+        "groups": [
+            {
+                "id": "1",
+                "name": "本地局域网",
+                "endpoints": [
+                    "10.0.0.1",
+                    "10.0.0.2"
+                ]
+            },
+            {
+                "id": "2",
+                "name": "本地虚拟机",
+                "endpoints": [
+                    "10.0.10.0/24"
+                ],
+                "excludes": [
+                    "10.0.0.1",
+                    "10.0.0.254"
+                ]
+            }
+        ],
+        "healthers": [
+            {
+                "id": "1",
+                "name": "游戏服务群",
+                "groups": [
+                    "1","2"
+                ],
+                "type": "tcp",
+                "port": 10000,
+                "timeout": "3s",
+                "interval": "1m",
+                "healthy_threshold": 3,
+                "unhealthy_threshold": 3,
+                "notifiers": {
+                   "sms": {
+                       "type":"unicom",
+                       "sp_id": "103905",
+                       "username": "zz_sj",
+                       "password": "www.zonst.org",
+                       "targets": ["13879156403", "15507911970"]
+                   }
+                }
+            },
+            {
+                "id": "2",
+                "name": "游戏web服务群",
+                "apply_groups": [
+                   "1","2"
+                ],
+                "type": "http",
+                "port": 8080,
+                "accept_code": [400, 404, 200],
+                "timeout": "3s",
+                "interval": "1m",
+                "healthy_threshold": 3,
+                "unhealthy_threshold": 3
+            }
+        ]
+    }
+}

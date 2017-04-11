@@ -4,8 +4,8 @@ from fabric.api import local, settings, abort, run, cd, env, put,lcd
 env.hosts = ['tonnn@115.159.101.234']
 env.key_filename = '~/.ssh/id_elastic'
 
-BIN_NAME = "gamesmssrv"
-SERVICE_NAME = "gamesmssrv.service"
+BIN_NAME = "gamehealthysrv"
+SERVICE_NAME = "gamehealthysrv.service"
 
 def build(os='darwin', arch='amd64', binary=BIN_NAME):
     with lcd('./cmd'):

@@ -1,0 +1,136 @@
+package retrieval
+
+import (
+	"context"
+	"sync"
+	"time"
+
+	"zonst/qipai/gamestagemonitor/config"
+	"zonst/qipai/gamestagemonitor/models"
+	"zonst/qipai/gamestagemonitor/storage"
+
+	"github.com/Sirupsen/logrus"
+)
+
+const (
+	healthySampleLabe = "HealthySample"
+)
+
+// scraper 接口，不通的scraper实现这个接口，由管理器统一调度执行
+type scraper interface {
+	scrape(ctx context.Context, ts time.Time) error
+}
+
+// looper 接口，控制scraper动作的循环
+type looper interface {
+	run(interval, timeout time.Duration, errc chan<- error)
+	stop()
+}
+
+// scrapePool 管理所有的scrape任务,
+type scrapePool struct {
+	config *config.ScrapeConfig
+	appender storage.SampleAppender
+	logger   *logrus.Logger
+	ctx     context.Context
+
+	mtx     sync.RWMutex
+	targets map[uint64]*Target
+	loops   map[uint64]looper
+}
+
+// newScrapePool 创建抓取任务池
+func newScrapePool(
+	ctx context.Context,
+	appender storage.SampleAppender,
+	logger *logrus.Logger,
+	config *config.ScrapeConfig) *scrapePool{
+	sp:= &scrapePool {}  
+	return sp
+}
+
+// reload 重新载入配置
+func (sp *scrapePool) reload(cfg *config.ScrapeConfig) {
+
+}
+
+// stop 停止所有抓取任务
+func (sp *scrapePool) stop() {
+
+}
+
+// scrapeLooper 循环的数据结构
+type scrapeLooper struct {
+	scraper  scraper
+	appender storage.SampleAppender
+	logger   *logrus.Logger
+
+	// 结束以及流程控制
+	done   chan struct{}
+	ctx    context.Context
+	cancel func()
+}
+
+// 创建一个循环 newScrapeLooper
+func newScrapeLooper(
+	ctx context.Context,
+	sc scraper,
+	appender storage.SampleAppender,
+	logger *logrus.Logger) *scrapeLooper {
+	sl := &scrapeLooper{
+		ctx:      ctx,
+		scraper:  sc,
+		appender: appender,
+		logger:   logger,
+		done:     make(chan struct{}),
+	}
+	sl.ctx, sl.cancel = context.WithCancel(ctx)
+	return sl
+}
+
+// run 每个任务的主循环，每个循环在独立的goroutine里面运行
+func (sl *scrapeLooper) run(interval, timeout time.Duration) {
+	defer close(sl.done)
+
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		var (
+			start              = time.Now()
+			timeoutCtx, cancel = context.WithTimeout(sl.ctx, timeout)
+			healthy            = 0
+		)
+		err := sl.scraper.scrape(timeoutCtx, start)
+		// 防止编译器警告
+		cancel()
+		// 错误表示不健康状态
+		if err == nil {
+			healthy = 1
+		}
+		// 生成样本
+		simple := &models.Sample{
+			Metric: models.Metric{
+				models.MetricNameLabel: healthySampleLabe,
+			},
+			Timestamp: models.TimeFromUnixNano(start.UnixNano()),
+			Value:     models.SampleValue(healthy),
+		}
+		// 写入样本
+		if err = sl.appender.Append(simple); err != nil {
+			sl.logger.WithField("sample", healthySampleLabe).Warn("Scrape health sample discarded")
+		}
+		// 结束或者下一次循环开始时间到了
+		select {
+		case <-sl.ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
+}
+
+// stop 停止任务循环, 同步停止
+func (sl *scrapeLooper) stop() {
+	sl.cancel()
+	<-sl.done
+}
