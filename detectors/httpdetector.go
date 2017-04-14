@@ -26,12 +26,20 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 	for _, g := range groups {
 		eps := g.Endpoints.Unfold().Exclude(g.Excluded)
 		for _, ep := range eps {
-			req, err := http.NewRequest("GET", fmt.Sprintf("http://%s:%d", string(ep), hp.Port), nil)
+			dtr.target = fmt.Sprintf("http://%s:%d", string(ep), hp.Port)
+			if hp.Location != "" {
+				dtr.target += hp.Location
+			}
+			req, err := http.NewRequest("GET", dtr.target, nil)
 			if err != nil {
 				log.Printf("endpoint %v ignore by %v", ep, err)
 				continue
 			}
+			if hp.Host != "" {
+				req.Host = hp.Host
+			}
 			dtr.reqs = append(dtr.reqs, req)
+			fmt.Println(req)
 		}
 	}
 	return dtr, nil
@@ -40,8 +48,9 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 type httpDetector struct {
 	model models.Heapster
 
-	wg   sync.WaitGroup
-	reqs []*http.Request
+	wg     sync.WaitGroup
+	reqs   []*http.Request
+	target string
 }
 
 func (dtr *httpDetector) plumb(ctx context.Context) (models.Reports, error) {
@@ -80,7 +89,7 @@ func (dtr *httpDetector) plumb(ctx context.Context) (models.Reports, error) {
 					reports = append(reports, models.Report{
 						Labels: models.LabelSet{
 							models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-							models.ReportNameTarget: models.LabelValue(req.URL.String()),
+							models.ReportNameTarget: models.LabelValue(dtr.target),
 							models.ReportNameResult: models.LabelValue(err.Error()),
 						},
 					})
@@ -89,7 +98,7 @@ func (dtr *httpDetector) plumb(ctx context.Context) (models.Reports, error) {
 					reports = append(reports, models.Report{
 						Labels: models.LabelSet{
 							models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-							models.ReportNameTarget: models.LabelValue(req.URL.String()),
+							models.ReportNameTarget: models.LabelValue(dtr.target),
 							models.ReportNameResult: models.LabelValue(
 								fmt.Sprintf("http response code %d", resp.StatusCode),
 							),
@@ -100,7 +109,7 @@ func (dtr *httpDetector) plumb(ctx context.Context) (models.Reports, error) {
 					reports = append(reports, models.Report{
 						Labels: models.LabelSet{
 							models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-							models.ReportNameTarget: models.LabelValue(req.URL.String()),
+							models.ReportNameTarget: models.LabelValue(dtr.target),
 							models.ReportNameResult: "ok",
 						},
 					})

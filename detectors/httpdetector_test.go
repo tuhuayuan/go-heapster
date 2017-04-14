@@ -39,25 +39,24 @@ func WithHTTPTarget(ctx context.Context) context.Context {
 }
 
 func TestHTTPPlumb(t *testing.T) {
-
 	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
-	g1 := models.NewGroup(
-		"test_local",
-		models.Endpoints{
+	g1 := models.Group{
+		ID:   "test_local",
+		Name: "test_local",
+		Endpoints: models.Endpoints{
 			models.Endpoint("127.0.0.1"),
 			models.Endpoint("10.0.0.1/28"),
 		},
-		nil, models.GroupStatusEnable)
-	g1.ID = "test_local_id"
+	}
 	assert.NoError(t, g1.Save(ctx))
-	g2 := models.NewGroup(
-		"test_remote",
-		models.Endpoints{
+	g2 := models.Group{
+		ID:   "test_remote",
+		Name: "test_remote",
+		Endpoints: models.Endpoints{
 			models.Endpoint("118.89.100.129"),
 			models.Endpoint("118.89.100.130"),
 		},
-		nil, models.GroupStatusEnable)
-	g2.ID = "test_remote_id"
+	}
 	assert.NoError(t, g2.Save(ctx))
 
 	hp := models.Heapster{
@@ -79,4 +78,31 @@ func TestHTTPPlumb(t *testing.T) {
 
 	serverCancel()
 	<-serverCtx.Done()
+}
+
+func TestHttpWithHost(t *testing.T) {
+	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
+	g1 := models.Group{
+		ID:   "test_local1",
+		Name: "test_local",
+		Endpoints: models.Endpoints{
+			models.Endpoint("127.0.0.1"),
+		},
+	}
+	assert.NoError(t, g1.Save(ctx))
+	hp := models.Heapster{
+		ID:         "test_httpdetector_id",
+		Name:       "test_httpdetector",
+		Type:       models.CheckTypeHTTP,
+		Port:       5050,
+		Timeout:    2 * time.Second,
+		Groups:     []string{string(g1.ID)},
+		AcceptCode: []int{400},
+		Location:   "/healthz",
+		Host:       "zonst.local2",
+	}
+
+	d, err := httpDetectorCreator(ctx, hp)
+	assert.NoError(t, err)
+	fmt.Println(d.plumb(context.Background()))
 }

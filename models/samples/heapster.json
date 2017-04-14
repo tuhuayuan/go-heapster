@@ -1,0 +1,23 @@
+[
+    {
+        "id": "sample_heapster_id",
+        "name": "sample_heapster",
+        "type": "http",
+        "port": 5050,
+        "accept_code": [
+            400
+        ],
+        "host": "zonst.local2",
+        "location": "/healthz",
+        "timeout": 3,
+        "interval": 5,
+        "healthy_threshold": 3,
+        "unhealthy_threshold": 3,
+        "groups": [
+            "test_group"
+        ],
+        "notifiers": [
+            "test_notifiers"
+        ]
+    }
+]

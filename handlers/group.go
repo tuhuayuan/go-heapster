@@ -9,22 +9,22 @@ import (
 
 // CreateGroupReq 创建group请求模型
 type CreateGroupReq struct {
-	Name      string   `json:"name" http:"name,required"`
-	Endpoints []string `json:"endpoints" http:"endpoints,required"`
-	Excluded  []string `json:"excluded" http:"excluded,required"`
-	Status    string   `json:"status,omitempty" http:"status,omitempty"`
+	Name      string   `json:"name"`
+	Endpoints []string `json:"endpoints"`
+	Excluded  []string `json:"excluded"`
+	Status    string   `json:"status,omitempty"`
 }
 
 // UpdateGroupReq 修改group请求模型
 type UpdateGroupReq struct {
 	CreateGroupReq
 
-	ID string `json:"id" http:"id,required"`
+	ID string `json:"id"`
 }
 
 // DeleteGroupReq 删除请求
 type DeleteGroupReq struct {
-	ID string `json:"id" http:"id,required"`
+	ID string `json:"id" http:"id"`
 }
 
 // FetchGroupReq 查询请求

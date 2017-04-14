@@ -8,20 +8,19 @@ import (
 )
 
 // CreateNotifierReq 创建请求
-// TODO 这个复杂的POST只能用JSON格式，需要扩展httputil支持
 type CreateNotifierReq struct {
-	Type   string                 `json:"type" http:"type,required"`
+	Type   string                 `json:"type"`
 	Config map[string]interface{} `json:"config"`
 }
 
 // DeleteNotifierReq 删除请求
 type DeleteNotifierReq struct {
-	ID string `json:"id" http:"id,required"`
+	ID string `json:"id" http:"id"`
 }
 
 // UpdateNotifierReq 更新请求
 type UpdateNotifierReq struct {
-	ID string `json:"id" http:"id,required"`
+	ID string `json:"id"`
 
 	CreateNotifierReq
 }
@@ -100,12 +99,8 @@ func UpdateNotifierHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	model.Type = req.Type
 	model.Config = req.Config
-	if err := model.Validate(); err != nil {
-		middlewares.ErrorWrite(w, 200, 3, err)
-		return
-	}
 	if err := model.Save(ctx); err != nil {
-		middlewares.ErrorWrite(w, 200, 4, err)
+		middlewares.ErrorWrite(w, 200, 3, err)
 		return
 	}
 	middlewares.ErrorWriteOK(w)

@@ -64,18 +64,24 @@ func (ct *CheckType) UnmarshalJSON(b []byte) error {
 
 // Heapster 健康检查结构体
 type Heapster struct {
-	ID         SerialNumber  `json:"id"`
-	Name       string        `json:"name"`
-	Type       CheckType     `json:"type"`
-	Port       int           `json:"port"`
-	AcceptCode []int         `json:"accept_code,omitempty"`
-	Timeout    time.Duration `json:"timeout"`
-	Interval   time.Duration `json:"interval"`
-	Healthy    int           `json:"healthy_threshold"`
-	UnHealthy  int           `json:"unhealthy_threshold"`
-	Groups     []string      `json:"groups"`
-	Notifiers  []string      `json:"notifiers"`
-	Version    int           `json:"version,omitempty"`
+	ID        SerialNumber  `json:"id"`
+	Name      string        `json:"name"`
+	Type      CheckType     `json:"type"`
+	Port      int           `json:"port"`
+	Timeout   time.Duration `json:"timeout"`
+	Interval  time.Duration `json:"interval"`
+	Healthy   int           `json:"healthy_threshold"`
+	UnHealthy int           `json:"unhealthy_threshold"`
+	Groups    []string      `json:"groups"`
+	Notifiers []string      `json:"notifiers"`
+	Version   int           `json:"version,omitempty"`
+
+	// for http
+	AcceptCode []int  `json:"accept_code,omitempty"`
+	Host       string `json:"host,omitempty"`
+	Location   string `json:"location,omitempty"`
+
+	// TODO: for https
 }
 
 // Heapsters 列表
@@ -193,11 +199,11 @@ func FetchHeapsters(ctx context.Context) (HeapsterSet, error) {
 		return nil, err
 	}
 	for _, rawKey := range rawKeys {
-		key := strings.TrimPrefix(string(rawKey), "gamehealthy_notifier_")
+		key := strings.TrimPrefix(string(rawKey), "gamehealthy_heapster_")
 		heapster := &Heapster{
 			ID: SerialNumber(key),
 		}
-		if heapster.Fill(ctx) != nil {
+		if err := heapster.Fill(ctx); err != nil {
 			continue
 		}
 		hset[HeapsterSetKey(heapster.ID)] = *heapster
@@ -259,6 +265,15 @@ func (hst *Heapster) Save(ctx context.Context) error {
 	err = conn.Flush()
 	_, err = conn.Receive()
 
+	return err
+}
+
+// Delete 删除
+func (hst *Heapster) Delete(ctx context.Context) error {
+	conn := middlewares.GetRedisConn(ctx)
+	defer conn.Close()
+
+	_, err := conn.Do("DEL", fmt.Sprintf("gamehealthy_heapster_%s", hst.ID))
 	return err
 }
 

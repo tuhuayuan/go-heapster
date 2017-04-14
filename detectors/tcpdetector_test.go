@@ -45,18 +45,20 @@ func WithTCPTarget(ctx context.Context) context.Context {
 
 func TestTCPPlumb(t *testing.T) {
 	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
-	g1 := models.NewGroup(
-		"test_local",
-		models.Endpoints{
+	g1 := models.Group{
+		ID:   "test_group1",
+		Name: "test_local",
+		Endpoints: models.Endpoints{
 			models.Endpoint("127.0.0.1"),
 			models.Endpoint("10.0.0.1/28"),
 		},
-		nil, models.GroupStatusEnable)
-	g1.ID = "test_local_id"
+		Excluded: models.Endpoints{},
+	}
 	assert.NoError(t, g1.Save(ctx))
-	g2 := models.NewGroup(
-		"test_remote",
-		models.Endpoints{
+	g2 := models.Group{
+		ID:   "test_gro2p1",
+		Name: "test_remote",
+		Endpoints: models.Endpoints{
 			models.Endpoint("118.89.100.129"),
 			models.Endpoint("118.89.100.130"),
 			models.Endpoint("118.89.100.76"),
@@ -64,8 +66,8 @@ func TestTCPPlumb(t *testing.T) {
 			models.Endpoint("118.89.100.78"),
 			models.Endpoint("118.89.100.79"),
 		},
-		nil, models.GroupStatusEnable)
-	g2.ID = "test_remote_id"
+		Excluded: models.Endpoints{},
+	}
 	assert.NoError(t, g2.Save(ctx))
 
 	hp := models.Heapster{
@@ -90,6 +92,7 @@ func TestTCPPlumb(t *testing.T) {
 	}()
 	fmt.Println(d.plumb(plumbCtx))
 	fmt.Println(d.plumb(plumbCtx))
+
 	serverCancel()
 	<-serverCtx.Done()
 }
