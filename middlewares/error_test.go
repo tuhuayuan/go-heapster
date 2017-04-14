@@ -7,14 +7,16 @@ import (
 	"testing"
 	"zonst/qipai-golang-libs/httputil"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestErrorHandler(t *testing.T) {
 	ctx := httputil.NewHTTPContext()
-	handler := ctx.HandleFunc(ErrorHandler(),
+	handler := ctx.HandleFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			SetJsonError(r, 401, 100, nil)
+			ErrorWrite(w, 401, 100, fmt.Errorf(""))
 		})
 
 	req := httptest.NewRequest("GET", "/", bytes.NewReader([]byte{}))

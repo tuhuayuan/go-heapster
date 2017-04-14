@@ -12,7 +12,7 @@ import (
 )
 
 func TestSMSNotifier(t *testing.T) {
-	sms, err := smsNotifierCreator(models.Notifier{
+	sms, err := smsNotifierCreator(models.HeapsterNotifier{
 		Type: "sms",
 		Config: map[string]interface{}{
 			"sms": map[string]interface{}{
@@ -26,16 +26,22 @@ func TestSMSNotifier(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	ctx := middlewares.WithRateLimiter(context.Background(), "0.0.0.0:6379", "", 8)
-	err = sms.Send(ctx, models.Report{
-		Labels: models.LabelSet{
-			models.ReportNameFor: "【游戏测试服务器】",
+	err = sms.Send(ctx, models.Reports{
+		models.Report{
+			Labels: models.LabelSet{
+				models.ReportNameFor:    "游戏测试服务器",
+				models.ReportNameTarget: "10.0.10.46:10000",
+				models.ReportNameResult: "timeout",
+			},
+		},
+		models.Report{
+
+			Labels: models.LabelSet{
+				models.ReportNameFor:    "游戏测试服务器",
+				models.ReportNameTarget: "10.0.10.47:10000",
+				models.ReportNameResult: "ok",
+			},
 		},
 	})
 	assert.NoError(t, err)
-	err = sms.Send(ctx, models.Report{
-		Labels: models.LabelSet{
-			models.ReportNameFor: "【游戏测试服务器】",
-		},
-	})
-	assert.Error(t, err)
 }

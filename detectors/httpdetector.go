@@ -14,7 +14,7 @@ func init() {
 	registCreator(string(models.CheckTypeHTTP), httpDetectorCreator)
 }
 
-var httpDetectorCreator detectorCreator = func(ctx context.Context, dm DetectorManager, hp models.Heapster) (detector, error) {
+var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.Heapster) (detector, error) {
 	dtr := &httpDetector{
 		model: hp,
 	}
@@ -24,7 +24,8 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, dm DetectorM
 		return nil, err
 	}
 	for _, g := range groups {
-		for _, ep := range g.UnFoldedEndpoints {
+		eps := g.Endpoints.Unfold().Exclude(g.Excluded)
+		for _, ep := range eps {
 			req, err := http.NewRequest("GET", fmt.Sprintf("http://%s:%d", string(ep), hp.Port), nil)
 			if err != nil {
 				log.Printf("endpoint %v ignore by %v", ep, err)

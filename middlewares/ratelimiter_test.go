@@ -17,7 +17,7 @@ func TestRateLimiter(t *testing.T) {
 	ctx.Use(RateLimiterHandler("0.0.0.0:6379", "", 1))
 	handler := ctx.HandleFunc(
 		RateLimitKey("13879156403"),
-		RateLimitEvery(time.Second*1, 3),
+		RateLimitEvery(time.Millisecond*1000, 3),
 		func(w http.ResponseWriter, r *http.Request) {
 		})
 
@@ -47,4 +47,14 @@ func TestRateLimiter(t *testing.T) {
 		handler(resp, req)
 		assert.Equal(t, 200, resp.Code)
 	}()
+}
+
+func TestRateLimiterBare(t *testing.T) {
+	limiter := NewRedisRateLimiter("0.0.0.0:6379", "", 1)
+	limiter.Accept([]string{"test_limiter"}, 1*time.Second, 3)
+	limiter.Accept([]string{"test_limiter"}, 1*time.Second, 3)
+	limiter.Accept([]string{"test_limiter"}, 1*time.Second, 3)
+
+	limiter.Accept([]string{"test_limiter"}, 1*time.Second, 3)
+	limiter.Accept([]string{"test_limiter"}, 1*time.Second, 3)
 }

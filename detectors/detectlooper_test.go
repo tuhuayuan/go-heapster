@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	registCreator("test", func(ctx context.Context, dm DetectorManager, hp models.Heapster) (detector, error) {
+	registCreator("test", func(ctx context.Context, hp models.Heapster) (detector, error) {
 		return &testDetector{}, nil
 	})
 }
@@ -34,18 +34,15 @@ func (td *testDetector) plumb(ctx context.Context) (models.Reports, error) {
 	return nil, nil
 }
 
-func TestManager(t *testing.T) {
+func TestDetectLooper(t *testing.T) {
 	var (
-		timeout, _  = models.ParseDuration("2s")
-		interval, _ = models.ParseDuration("2s")
-
 		hp = models.Heapster{
 			ID:        "123456",
 			Name:      "test_manager",
 			Type:      models.CheckType("test"),
 			Port:      5200,
-			Timeout:   timeout,
-			Interval:  interval,
+			Timeout:   2 * time.Second,
+			Interval:  2 * time.Second,
 			Healthy:   3,
 			UnHealthy: 3,
 		}
@@ -53,13 +50,10 @@ func TestManager(t *testing.T) {
 
 	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
 
-	m := NewManager(ctx)
-	looper, err := m.CreateLooper(hp)
+	looper, err := NewDetectLooper(ctx, hp)
 	assert.NoError(t, err)
 
 	looper.Run()
 	time.Sleep(15 * time.Second)
-
-	m.DropLooper(hp)
-	m.Shutdown()
+	looper.Stop()
 }

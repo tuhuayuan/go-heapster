@@ -1,0 +1,30 @@
+[
+    {
+        "id": "testsms1",
+        "type": "sms",
+        "version": 1,
+        "config": {
+            "type": "unicom",
+            "sp": "103905",
+            "username": "zz_sj",
+            "password": "www.zonst.org",
+            "targets": [
+                "13879156403"
+            ]
+        }
+    },
+    {
+        "id": "testsms2",
+        "type": "sms",
+        "version": 1,
+        "config": {
+            "type": "unicom",
+            "sp": "103905",
+            "username": "zz_sj",
+            "password": "www.zonst.org",
+            "targets": [
+                "15507911970"
+            ]
+        }
+    }
+]

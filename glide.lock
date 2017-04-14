@@ -1,7 +1,71 @@
-hash: 05dc7af2f944852aecc84bb7b7bee551dc39f5ec43bf63377b1f5e64d1b6133e
-updated: 2017-04-07T10:32:18.72816606+08:00
-imports: []
+hash: c597691f5ee55eb44a7b0086f480e27151d40dbf58a7872d22b3a70b60156f68
+updated: 2017-04-12T11:23:00.704821334+08:00
+imports:
+- name: github.com/codegangsta/inject
+  version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
+- name: github.com/coreos/etcd
+  version: ac1c7eba21545c4ee025f2c340e143cacb53c754
+  subpackages:
+  - client
+  - pkg/pathutil
+  - pkg/types
+- name: github.com/fsnotify/fsnotify
+  version: a904159b9206978bb6d53fcc7a769e5cd726c737
+- name: github.com/garyburd/redigo
+  version: 8873b2f1995f59d4bcdd2b0dc9858e2cb9bf0c13
+  subpackages:
+  - internal
+  - redis
+- name: github.com/juju/ratelimit
+  version: acf38b000a03e4ab89e40f20f1e548f4e6ac7f72
+- name: github.com/Sirupsen/logrus
+  version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
+- name: github.com/ugorji/go
+  version: ded73eae5db7e7a0ef6f55aace87a2873c5d2b74
+  subpackages:
+  - codec
+- name: golang.org/x/net
+  version: f2499483f923065a842d38eb4c7f1927e6fc6e6d
+  subpackages:
+  - context
+  - http2
+  - http2/hpack
+  - internal/timeseries
+  - trace
+- name: golang.org/x/sys
+  version: e4594059fe4cde2daf423055a596c2cd1e6c9adf
+  subpackages:
+  - unix
+- name: golang.org/x/text
+  version: f4b4367115ec2de254587813edaa901bc1c723a8
+  subpackages:
+  - encoding
+  - encoding/internal
+  - encoding/internal/identifier
+  - encoding/simplifiedchinese
+  - transform
+- name: zonst/qipai-golang-libs/httputil
+  version: 8eaf84dbe2a62ea667ccd668123598ac2efa73c5
+  repo: http://git.xq5.com:/qipai-golang-libs/httputil.git
+  vcs: git
+- name: zonst/qipai/logagent
+  version: 41fcab8407bc33c23f673d7bb6cb3662a4b1e5b9
+  repo: http://git.xq5.com:/qipai-apisrv/logagent.git
+  vcs: git
+  subpackages:
+  - output/elastic
+  - output/stdout
+  - queue
+  - utils
 testImports:
+- name: github.com/davecgh/go-spew
+  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
 - name: github.com/stretchr/testify
   version: 4d4bfba8f1d1027c4fdbe371823030df51419987
   subpackages:

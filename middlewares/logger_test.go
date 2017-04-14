@@ -7,20 +7,21 @@ import (
 	"testing"
 	"zonst/qipai-golang-libs/httputil"
 
-	"github.com/Sirupsen/logrus"
+	"os"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLogger(t *testing.T) {
 	ctx := httputil.NewHTTPContext()
 
-	handler1 := ctx.HandleFunc(Logger(logrus.New()),
+	handler1 := ctx.HandleFunc(LoggerHandler(5, os.Stdout),
 		func(w http.ResponseWriter, r *http.Request) {
 			ctx := httputil.GetContext(r)
 			ctx.Set("errno", -1)
 			w.WriteHeader(400)
 		})
-	handler2 := ctx.HandleFunc(Logger(logrus.New()),
+	handler2 := ctx.HandleFunc(LoggerHandler(5, os.Stdout),
 		func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 		})

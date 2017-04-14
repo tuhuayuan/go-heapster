@@ -14,7 +14,7 @@ func init() {
 	registCreator(string(models.CheckTypeTCP), tcpDetectorCreator)
 }
 
-var tcpDetectorCreator detectorCreator = func(ctx context.Context, dm DetectorManager, hp models.Heapster) (detector, error) {
+var tcpDetectorCreator detectorCreator = func(ctx context.Context, hp models.Heapster) (detector, error) {
 	dtr := &tcpDetector{
 		model: hp,
 	}
@@ -23,8 +23,10 @@ var tcpDetectorCreator detectorCreator = func(ctx context.Context, dm DetectorMa
 	if err != nil {
 		return nil, err
 	}
+
 	for _, g := range groups {
-		for _, ep := range g.UnFoldedEndpoints {
+		eps := g.Endpoints.Unfold().Exclude(g.Excluded)
+		for _, ep := range eps {
 			addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", string(ep), hp.Port))
 			if err != nil {
 				log.Printf("endpoint %v ignore by %v", ep, err)

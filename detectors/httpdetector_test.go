@@ -9,6 +9,8 @@ import (
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
 
+	"time"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,9 +39,6 @@ func WithHTTPTarget(ctx context.Context) context.Context {
 }
 
 func TestHTTPPlumb(t *testing.T) {
-	var (
-		timeout, _ = models.ParseDuration("2s")
-	)
 
 	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
 	g1 := models.NewGroup(
@@ -66,7 +65,7 @@ func TestHTTPPlumb(t *testing.T) {
 		Name:       "test_httpdetector",
 		Type:       models.CheckTypeHTTP,
 		Port:       5200,
-		Timeout:    timeout,
+		Timeout:    2 * time.Second,
 		Groups:     []string{string(g1.ID), string(g2.ID)},
 		AcceptCode: []int{200, 404},
 	}
@@ -74,7 +73,7 @@ func TestHTTPPlumb(t *testing.T) {
 	ctx, serverCancel := context.WithCancel(ctx)
 	serverCtx := WithHTTPTarget(ctx)
 
-	d, err := httpDetectorCreator(ctx, nil, hp)
+	d, err := httpDetectorCreator(ctx, hp)
 	assert.NoError(t, err)
 	fmt.Println(d.plumb(context.Background()))
 

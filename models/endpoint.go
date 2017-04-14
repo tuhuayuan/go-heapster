@@ -157,3 +157,19 @@ func (eps Endpoints) Contains(ep Endpoint) bool {
 	}
 	return false
 }
+
+// ParseEndpoints 从字符串列表解析
+func ParseEndpoints(rawData []string, allowCIDR bool) (Endpoints, error) {
+	eps := make(Endpoints, 0, len(rawData))
+	for _, rawEp := range rawData {
+		ep := Endpoint(rawEp)
+		if err := ep.Validate(); err != nil {
+			return nil, err
+		}
+		if !allowCIDR && ep.IsCIDRAddr() {
+			return nil, fmt.Errorf("cidr not allowed")
+		}
+		eps = append(eps, ep)
+	}
+	return eps, nil
+}

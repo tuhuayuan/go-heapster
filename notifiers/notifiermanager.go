@@ -11,7 +11,7 @@ var (
 )
 
 // notifier工厂方法
-type notifierCreator func(model models.Notifier) (Notifier, error)
+type notifierCreator func(model models.HeapsterNotifier) (Notifier, error)
 
 // 注册工厂
 func registCreator(name string, creator notifierCreator) {
@@ -20,22 +20,11 @@ func registCreator(name string, creator notifierCreator) {
 
 // Notifier 健康状态通知者接口
 type Notifier interface {
-	Send(ctx context.Context, report models.Report) error
+	Send(ctx context.Context, report models.Reports) error
 }
 
-// NotifierManager 管理接口
-type NotifierManager interface {
-	CreateNotifier(model models.Notifier) (Notifier, error)
-}
-
-// DefaultManager 默认管理器
-var DefaultManager = defaultManager{}
-
-type defaultManager struct {
-}
-
-// CreateNotifier 实现管理接口
-func (dm *defaultManager) CreateNotifier(model models.Notifier) (Notifier, error) {
+// NewNotifier 实现管理接口
+func NewNotifier(model models.HeapsterNotifier) (Notifier, error) {
 	name := model.Type
 	creator, ok := namedNotifiers[string(name)]
 	if !ok {

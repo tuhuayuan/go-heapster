@@ -1,8 +1,18 @@
 package: zonst/qipai/gameheathysrv
-import: [
-
-]
-
+import:
+- package: zonst/qipai-golang-libs/httputil
+  version: evo
+  repo: http://git.xq5.com:/qipai-golang-libs/httputil.git
+  vcs: git
+- package: zonst/qipai/logagent
+  version: master
+  repo: http://git.xq5.com:/qipai-apisrv/logagent.git
+  vcs: git
+  subpackages:
+  - output/elastic
+  - output/stdout
+  - utils
+- package: github.com/juju/ratelimit
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

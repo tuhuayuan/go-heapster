@@ -15,18 +15,18 @@ func init() {
 type testNotifier struct {
 }
 
-var testNotifierCreator = func(model models.Notifier) (Notifier, error) {
+var testNotifierCreator = func(model models.HeapsterNotifier) (Notifier, error) {
 	return &testNotifier{}, nil
 }
 
-func (tn *testNotifier) Send(ctx context.Context, report models.Report) error {
+func (tn *testNotifier) Send(ctx context.Context, reports models.Reports) error {
 	return nil
 }
 
 func TestDefaultManager(t *testing.T) {
-	n, err := DefaultManager.CreateNotifier(models.Notifier{
+	n, err := NewNotifier(models.HeapsterNotifier{
 		Type: "test",
 	})
 	assert.NoError(t, err)
-	assert.NoError(t, n.Send(context.Background(), models.Report{}))
+	assert.NoError(t, n.Send(context.Background(), models.Reports{}))
 }

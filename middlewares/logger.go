@@ -1,30 +1,48 @@
 package middlewares
 
 import (
+	"context"
+	"io"
 	"net/http"
 	"time"
-	"zonst/qipai-golang-libs/httputil"
 
 	"github.com/Sirupsen/logrus"
+
+	"zonst/qipai-golang-libs/httputil"
 )
 
-// Logger 请求日志中间件
-func Logger(logger *logrus.Logger) http.HandlerFunc {
+type loggerContextKey string
+
+const (
+	loggerContextName loggerContextKey = "_logger_"
+)
+
+// GetLogger 获取上下文的日志器
+func GetLogger(ctx context.Context) *logrus.Logger {
+	return ctx.Value(loggerContextName).(*logrus.Logger)
+}
+
+// WithLogger 获取含日志的上下文
+func WithLogger(parent context.Context, level int, output io.Writer) context.Context {
+	logger := logrus.New()
+	logger.Level = logrus.Level(level)
+	logger.Out = output
+	return context.WithValue(parent, loggerContextName, logger)
+}
+
+// LoggerHandler 请求日志中间件
+func LoggerHandler(level int, output io.Writer) http.HandlerFunc {
+	logger := logrus.New()
+	logger.Level = logrus.Level(level)
+	logger.Out = output
 	return func(w http.ResponseWriter, r *http.Request) {
-		var (
-			errno int
-			ok    bool
-		)
 		ctx := httputil.GetContext(r)
+		ctx.Set(loggerContextName, logger)
+
+		// 记录请求时间间隔
 		start := time.Now()
 		ctx.Next()
-		errno, ok = ctx.Value("errno").(int)
-		if ok && errno != 0 {
-			logger.Errorf("[%s] [%s] from [%s] used %.3fsecs Content-Type [%s] ErrNo[%d] ",
-				r.Method, r.URL.Path, r.RemoteAddr, time.Now().Sub(start).Seconds(), r.Header.Get("Content-Type"), errno)
-		} else {
-			logger.Infof("[%s] [%s] from [%s] used %.3fsecs",
-				r.Method, r.URL.Path, r.RemoteAddr, time.Now().Sub(start).Seconds())
-		}
+		logger.Infof("[%s] [%s] from [%s] used %.3fsecs",
+			r.Method, r.URL.Path, r.RemoteAddr, time.Now().Sub(start).Seconds())
 	}
 }

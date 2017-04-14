@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"zonst/qipai/gamehealthysrv/middlewares"
 
+	"strings"
+
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -36,13 +38,16 @@ func (gs *GroupStatus) UnmarshalJSON(b []byte) error {
 
 // Group 监控组数据结构
 type Group struct {
-	ID                SerialNumber `json:"id"`
-	Name              string       `json:"name"`
-	FoldedEndpoints   Endpoints    `json:"endpoints,omitempty"`
-	UnFoldedEndpoints Endpoints    `json:"-"`
-	ExcludedEndpoints Endpoints    `json:"excluded,omitempty"`
-	Status            GroupStatus  `json:"status,omitempty"`
+	ID        SerialNumber `json:"id"`
+	Name      string       `json:"name"`
+	Endpoints Endpoints    `json:"endpoints,omitempty"`
+	Excluded  Endpoints    `json:"excluded,omitempty"`
+	Status    GroupStatus  `json:"status,omitempty"`
+	Version   int          `json:"version,omitempty"`
 }
+
+// Groups 组列表
+type Groups []Group
 
 // Validate 验证合法性
 func (g *Group) Validate() error {
@@ -55,41 +60,21 @@ func (g *Group) Validate() error {
 	return nil
 }
 
-// NewGroup 创建一个Group
-func NewGroup(name string, eps Endpoints, excluded Endpoints, st GroupStatus) *Group {
-	g := &Group{
-		ID:                NewSerialNumber(),
-		Name:              name,
-		FoldedEndpoints:   eps.Validate(),
-		ExcludedEndpoints: excluded.Validate(),
-		Status:            st,
-	}
-	g.UnFoldedEndpoints = g.FoldedEndpoints.Unfold()
-	g.UnFoldedEndpoints = g.UnFoldedEndpoints.Exclude(g.ExcludedEndpoints)
-	return g
-}
-
-// UnmarshalJSON json解码实现
-func (g *Group) UnmarshalJSON(b []byte) error {
-	type _Group Group
-	rawGroup := &_Group{}
-	if err := json.Unmarshal(b, rawGroup); err != nil {
-		return err
-	}
-	*g = *NewGroup(rawGroup.Name, rawGroup.FoldedEndpoints, rawGroup.ExcludedEndpoints, rawGroup.Status)
-	g.ID = rawGroup.ID
-	return nil
-}
-
 // Fill 根据ID查询 Group 对象
 func (g *Group) Fill(ctx context.Context) error {
 	conn := middlewares.GetRedisConn(ctx)
 	defer conn.Close()
-	data, err := redis.Bytes(conn.Do("GET", fmt.Sprintf("gamehealthy_group_%s", g.ID)))
+
+	storeKey := fmt.Sprintf("gamehealthy_group_%s", g.ID)
+	data, err := redis.Bytes(conn.Do("HGET", storeKey, "meta"))
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(data, g)
+	if err := json.Unmarshal(data, g); err != nil {
+		return err
+	}
+	g.Version, err = redis.Int(conn.Do("HGET", storeKey, "version"))
+	return err
 }
 
 // Save 持久化 Group 对象
@@ -103,29 +88,47 @@ func (g *Group) Save(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	_, err = conn.Do("SET", fmt.Sprintf("gamehealthy_group_%s", g.ID), data)
+
+	storeKey := fmt.Sprintf("gamehealthy_group_%s", g.ID)
+	err = conn.Send("MULTI")
+	err = conn.Send("HSET", storeKey, "meta", data)
+	err = conn.Send("HINCRBY", storeKey, "version", 1)
+	err = conn.Send("EXEC")
+	err = conn.Flush()
+	_, err = conn.Receive()
 	return err
 }
 
-// Groups 组列表
-type Groups []Group
+// Delete 删除
+func (g *Group) Delete(ctx context.Context) error {
+	conn := middlewares.GetRedisConn(ctx)
+	defer conn.Close()
 
-// Save 保存所有
-func (gs Groups) Save(ctx context.Context) error {
-	for _, g := range gs {
-		if err := g.Save(ctx); err != nil {
-			return err
-		}
-	}
-	return nil
+	storeKey := fmt.Sprintf("gamehealthy_group_%s", g.ID)
+	_, err := conn.Do("DEL", storeKey)
+
+	return err
 }
 
-// Fill 查找所有数据
-func (gs Groups) Fill(ctx context.Context) error {
-	for _, g := range gs {
-		if err := g.Fill(ctx); err != nil {
-			return err
-		}
+// FetchGroups 获取group列表
+func FetchGroups(ctx context.Context) (Groups, error) {
+	conn := middlewares.GetRedisConn(ctx)
+	defer conn.Close()
+
+	rawKeys, err := redis.ByteSlices(conn.Do("KEYS", "gamehealthy_group_*"))
+	if err != nil {
+		return nil, err
 	}
-	return nil
+	gs := make(Groups, 0, 256)
+	for _, rawKey := range rawKeys {
+		key := strings.TrimPrefix(string(rawKey), "gamehealthy_group_")
+		g := &Group{
+			ID: SerialNumber(key),
+		}
+		if g.Fill(ctx) != nil {
+			continue
+		}
+		gs = append(gs, *g)
+	}
+	return gs, nil
 }

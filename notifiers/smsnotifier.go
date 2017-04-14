@@ -12,7 +12,7 @@ func init() {
 	registCreator("sms", smsNotifierCreator)
 }
 
-var smsNotifierCreator = func(model models.Notifier) (Notifier, error) {
+var smsNotifierCreator = func(model models.HeapsterNotifier) (Notifier, error) {
 	var (
 		spType     string
 		spID       string
@@ -66,18 +66,35 @@ type smsNotifier struct {
 }
 
 // Send 短信不能发那么多字, 只能发一个大概的描述
-func (sms *smsNotifier) Send(ctx context.Context, report models.Report) error {
-	limiter, err := middlewares.GetRateLimiter(ctx)
-	if err == nil {
-		if limiter.RateControl(sms.numbers, 5*time.Minute, 1) {
-			return fmt.Errorf("rate controll")
+func (sms *smsNotifier) Send(ctx context.Context, reports models.Reports) error {
+	limiter := middlewares.GetRateLimiter(ctx)
+	if limiter.TryAccept(sms.numbers, 5*time.Minute, 1) {
+		return fmt.Errorf("rate controll")
+	}
+
+	var (
+		reportFor     string
+		errCount      int
+		lastErrTarget string
+	)
+	// 报告简单汇总 TODO: 后期放到Elastic里面处理
+	for i, rp := range reports {
+		if rp.Validate() != nil {
+			continue
+		}
+		if i == 0 {
+			reportFor = string(rp.Labels[models.ReportNameFor])
+		}
+		if rp.Labels[models.ReportNameResult] != "ok" {
+			errCount++
+			lastErrTarget = string(rp.Labels[models.ReportNameTarget])
 		}
 	}
 	tpl := fmt.Sprintf("%s提醒：%s需要%s请查阅%s",
-		"监控程序",
-		"监控组"+report.Labels[models.ReportNameFor]+"发生异常",
+		"监控",
+		"（"+reportFor+"）的实例（"+lastErrTarget+"）异常",
 		"处理",
-		"监控管理平台")
+		"监控报告")
 
 	sendCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	result := sms.provider.SendMessage(sendCtx, tpl, sms.numbers)

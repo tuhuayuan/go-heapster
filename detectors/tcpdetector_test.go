@@ -44,10 +44,6 @@ func WithTCPTarget(ctx context.Context) context.Context {
 }
 
 func TestTCPPlumb(t *testing.T) {
-	var (
-		timeout, _ = models.ParseDuration("1s")
-	)
-
 	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
 	g1 := models.NewGroup(
 		"test_local",
@@ -77,14 +73,14 @@ func TestTCPPlumb(t *testing.T) {
 		Name:    "test_tcpdetector",
 		Type:    models.CheckTypeTCP,
 		Port:    10000,
-		Timeout: timeout,
+		Timeout: 1 * time.Second,
 		Groups:  []string{string(g1.ID), string(g2.ID)},
 	}
 
 	ctx, serverCancel := context.WithCancel(ctx)
 	serverCtx := WithTCPTarget(ctx)
 
-	d, err := tcpDetectorCreator(ctx, nil, hp)
+	d, err := tcpDetectorCreator(ctx, hp)
 	assert.NoError(t, err)
 
 	plumbCtx, plumbCancel := context.WithCancel(context.Background())
