@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Sirupsen/logrus"
-
 	"zonst/qipai-golang-libs/httputil"
+
+	"github.com/Sirupsen/logrus"
 )
 
 type loggerContextKey string
@@ -36,12 +36,12 @@ func LoggerHandler(level int, output io.Writer) http.HandlerFunc {
 	logger.Level = logrus.Level(level)
 	logger.Out = output
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := httputil.GetContext(r)
-		ctx.Set(loggerContextName, logger)
+		ctx := r.Context()
+		httputil.WithValue(ctx, loggerContextName, logger)
 
 		// 记录请求时间间隔
 		start := time.Now()
-		ctx.Next()
+		httputil.Next(ctx)
 		logger.Infof("[%s] [%s] from [%s] used %.3fsecs",
 			r.Method, r.URL.Path, r.RemoteAddr, time.Now().Sub(start).Seconds())
 	}

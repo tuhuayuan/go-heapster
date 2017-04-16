@@ -4,8 +4,9 @@ import (
 	"context"
 	"net/http"
 	"time"
-	"zonst/qipai-golang-libs/httputil"
 	"zonst/qipai/logagent/utils"
+
+	"zonst/qipai-golang-libs/httputil"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -59,8 +60,8 @@ func RedisConnHandler(host string, passwd string, db int) http.HandlerFunc {
 	redisCtx := WithRedisConn(context.Background(), host, passwd, db)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := httputil.GetContext(r)
-		ctx.Set(redisContextLabel, redisCtx.Value(redisContextLabel))
-		ctx.Next()
+		ctx := r.Context()
+		httputil.WithValue(ctx, redisContextLabel, redisCtx.Value(redisContextLabel))
+		httputil.Next(ctx)
 	}
 }

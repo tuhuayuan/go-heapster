@@ -13,9 +13,9 @@ import (
 )
 
 func TestRateLimiter(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(RateLimiterHandler("0.0.0.0:6379", "", 1))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, RateLimiterHandler("0.0.0.0:6379", "", 1))
+	handler := httputil.HandleFunc(ctx,
 		RateLimitKey("13879156403"),
 		RateLimitEvery(time.Millisecond*1000, 3),
 		func(w http.ResponseWriter, r *http.Request) {

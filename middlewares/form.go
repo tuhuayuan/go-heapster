@@ -39,7 +39,7 @@ func BindBody(ptrStruct interface{}) http.HandlerFunc {
 		var (
 			err error
 		)
-		ctx := httputil.GetContext(r)
+		ctx := r.Context()
 		structBody := reflect.New(structType.Elem())
 		contentType := r.Header.Get("Content-Type")
 		// 支持json、form、querystring三种方式
@@ -62,10 +62,10 @@ func BindBody(ptrStruct interface{}) http.HandlerFunc {
 		}
 		// 标示绑定数据错误
 		if err != nil {
-			ctx.Set(bindBodyContextError, err)
+			httputil.WithValue(ctx, bindBodyContextError, err)
 		} else {
-			ctx.Set(bindBodyContextInstance, structBody.Interface())
+			httputil.WithValue(ctx, bindBodyContextInstance, structBody.Interface())
 		}
-		ctx.Next()
+		httputil.Next(ctx)
 	}
 }

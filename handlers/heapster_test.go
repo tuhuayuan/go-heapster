@@ -17,9 +17,9 @@ import (
 var heapsterTestID string
 
 func TestCreateHeapster(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&CreateHeapsterReq{}),
 		CreateHeapsterHandler)
 	data := []byte(`
@@ -57,9 +57,9 @@ func TestCreateHeapster(t *testing.T) {
 }
 
 func TestUpdateHeapter(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&UpdateHeapsterReq{}),
 		UpdateHeapsterHandler)
 	data := []byte(`
@@ -95,9 +95,9 @@ func TestUpdateHeapter(t *testing.T) {
 }
 
 func TestFetchHeapster(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&FetchHeapsterReq{}),
 		FetchHeapsterHandler)
 
@@ -110,9 +110,9 @@ func TestFetchHeapster(t *testing.T) {
 }
 
 func TestDeleteHeapster(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&DeleteHeapsterReq{}),
 		DeleteHeapsterHandler)
 	data := []byte(`

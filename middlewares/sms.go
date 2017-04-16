@@ -22,8 +22,7 @@ func init() {
 }
 
 // GetSMSProvider 获取短信发送器
-func GetSMSProvider(r *http.Request, name string) SMSProvider {
-	ctx := httputil.GetContext(r)
+func GetSMSProvider(ctx context.Context, name string) SMSProvider {
 	config := ctx.Value(name)
 	provider, err := CreateSMSProvider(name, config)
 	if err != nil {
@@ -36,9 +35,9 @@ func GetSMSProvider(r *http.Request, name string) SMSProvider {
 // SMSHelper 短信发送助手
 func SMSHelper(name string, config interface{}) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := httputil.GetContext(r)
-		ctx.Set(name, config)
-		ctx.Next()
+		ctx := r.Context()
+		httputil.WithValue(ctx, name, config)
+		httputil.Next(ctx)
 	}
 }
 

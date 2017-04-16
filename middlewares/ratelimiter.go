@@ -121,7 +121,7 @@ func (limiter *redisRateLimiter) Accept(keys []string, every time.Duration, time
 // RateLimitEvery 每X时间Y次
 func RateLimitEvery(every time.Duration, times int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := httputil.GetContext(r)
+		ctx := r.Context()
 		limiter := ctx.Value(RateLimiterContextKey).(RateLimiter)
 		rawKeys := ctx.Value("_ratelimit_key").(map[string]interface{})
 		keys := make([]string, 0, len(rawKeys))
@@ -132,7 +132,7 @@ func RateLimitEvery(every time.Duration, times int) http.HandlerFunc {
 		if limiter.TryAccept(keys, every, times) {
 			w.WriteHeader(403)
 		} else {
-			ctx.Next()
+			httputil.Next(ctx)
 		}
 	}
 }
@@ -143,12 +143,12 @@ func RateLimitKey(keys ...string) http.HandlerFunc {
 		var (
 			keyMap = make(map[string]interface{})
 		)
-		ctx := httputil.GetContext(r)
+		ctx := r.Context()
 		for _, k := range keys {
 			keyMap[k] = nil
 		}
-		ctx.Set("_ratelimit_key", keyMap)
-		ctx.Next()
+		httputil.WithValue(ctx, "_ratelimit_key", keyMap)
+		httputil.Next(ctx)
 	}
 }
 
@@ -175,8 +175,8 @@ func RateLimiterHandler(host string, passwd string, db int) http.HandlerFunc {
 	limiter := NewRedisRateLimiter(host, passwd, db)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := httputil.GetContext(r)
-		ctx.Set(RateLimiterContextKey, limiter)
-		ctx.Next()
+		ctx := r.Context()
+		httputil.WithValue(ctx, RateLimiterContextKey, limiter)
+		httputil.Next(ctx)
 	}
 }

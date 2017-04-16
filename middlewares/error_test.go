@@ -2,19 +2,19 @@ package middlewares
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"zonst/qipai-golang-libs/httputil"
-
-	"fmt"
 
 	"github.com/stretchr/testify/assert"
+
+	"zonst/qipai-golang-libs/httputil"
 )
 
 func TestErrorHandler(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	handler := httputil.HandleFunc(ctx,
 		func(w http.ResponseWriter, r *http.Request) {
 			ErrorWrite(w, 401, 100, fmt.Errorf(""))
 		})

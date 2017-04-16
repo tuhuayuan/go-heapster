@@ -17,9 +17,9 @@ import (
 var notifierTestID string
 
 func TestCreateNotifier(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&CreateNotifierReq{}),
 		CreateNotifierHandler)
 	data := []byte(`
@@ -50,9 +50,9 @@ func TestCreateNotifier(t *testing.T) {
 }
 
 func TestUpdateNotifier(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&DeleteNotifierReq{}),
 		DeleteNotifierHandler)
 	data := []byte(`
@@ -81,9 +81,9 @@ func TestUpdateNotifier(t *testing.T) {
 }
 
 func TestFetchNotifier(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&FetchNotifierReq{}),
 		FetchNotifierHandler)
 
@@ -96,9 +96,9 @@ func TestFetchNotifier(t *testing.T) {
 }
 
 func TestDeleteNotifier(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&DeleteNotifierReq{}),
 		DeleteNotifierHandler)
 	data := []byte(`

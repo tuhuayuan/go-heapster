@@ -13,15 +13,15 @@ import (
 )
 
 func TestLogger(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
+	ctx := httputil.WithHTTPContext(nil)
 
-	handler1 := ctx.HandleFunc(LoggerHandler(5, os.Stdout),
+	handler1 := httputil.HandleFunc(ctx, LoggerHandler(5, os.Stdout),
 		func(w http.ResponseWriter, r *http.Request) {
-			ctx := httputil.GetContext(r)
-			ctx.Set("errno", -1)
+			ctx := r.Context()
+			httputil.WithValue(ctx, "errno", -1)
 			w.WriteHeader(400)
 		})
-	handler2 := ctx.HandleFunc(LoggerHandler(5, os.Stdout),
+	handler2 := httputil.HandleFunc(ctx, LoggerHandler(5, os.Stdout),
 		func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(200)
 		})

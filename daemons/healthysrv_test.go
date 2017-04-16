@@ -12,7 +12,7 @@ func TestHealthySrv(t *testing.T) {
 	var config = `
     {
         "input": [
-           { 
+           {  
                "type": "gamehealthysrv",
                "redis_host": "localhost:6379",
                "redis_password": "",

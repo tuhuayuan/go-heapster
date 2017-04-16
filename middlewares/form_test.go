@@ -36,8 +36,9 @@ func TestBindBody(t *testing.T) {
 		},
 	}
 
-	ctx := httputil.NewHTTPContext()
-	handler := ctx.HandleFunc(BindBody(&TestFormData{}),
+	ctx := httputil.WithHTTPContext(nil)
+	handler := httputil.HandleFunc(ctx,
+		BindBody(&TestFormData{}),
 		func(w http.ResponseWriter, r *http.Request) {
 			_, err := GetBindBody(r.Context())
 			assert.NoError(t, err)
@@ -61,7 +62,8 @@ func TestBindBody(t *testing.T) {
 		},
 	}
 
-	handler = ctx.HandleFunc(BindBody(&TestFormData{}),
+	handler = httputil.HandleFunc(ctx,
+		BindBody(&TestFormData{}),
 		func(w http.ResponseWriter, r *http.Request) {
 			_, err := GetBindBody(r.Context())
 			assert.Error(t, err)
@@ -86,7 +88,8 @@ func TestBindBody(t *testing.T) {
         }
         `))),
 	}
-	handler = ctx.HandleFunc(BindBody(&TestFormData{}),
+	handler = httputil.HandleFunc(ctx,
+		BindBody(&TestFormData{}),
 		func(w http.ResponseWriter, r *http.Request) {
 			_, err := GetBindBody(r.Context())
 			assert.NoError(t, err)
@@ -109,7 +112,8 @@ func TestBindBody(t *testing.T) {
         }
         `))),
 	}
-	handler = ctx.HandleFunc(BindBody(&TestFormData{}),
+	handler = httputil.HandleFunc(ctx,
+		BindBody(&TestFormData{}),
 		func(w http.ResponseWriter, r *http.Request) {
 			_, err := GetBindBody(r.Context())
 			assert.Error(t, err)

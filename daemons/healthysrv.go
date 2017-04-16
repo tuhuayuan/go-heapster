@@ -26,7 +26,7 @@ type HealthySrv struct {
 	UnicomUsername string `json:"unicom_username"`
 	UnicomPassword string `json:"unicom_password"`
 
-	LogLevel   uint8    `json:"log_level"`
+	LogLevel   int      `json:"log_level"`
 	AccessKeys []string `json:"accesskeys"`
 
 	// 私有配置
@@ -155,7 +155,7 @@ func (srv *HealthySrv) Stop() {
 // 服务内部初始化
 func (srv *HealthySrv) init() {
 	srv.ctx = context.Background()
-	srv.ctx = middlewares.WithLogger(srv.ctx, int(srv.LogLevel), os.Stdout)
+	srv.ctx = middlewares.WithLogger(srv.ctx, srv.LogLevel, os.Stdout)
 	srv.ctx = middlewares.WithRedisConn(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
 	srv.ctx = middlewares.WithRateLimiter(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
 

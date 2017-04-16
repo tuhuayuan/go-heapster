@@ -11,6 +11,26 @@ type APIReponseError struct {
 	ErrorMsg string `json:"errmsg"`
 }
 
+func (nf *notfound) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	raw, _ := json.Marshal(nf)
+	w.WriteHeader(200)
+	w.Write(raw)
+}
+
+type notfound struct {
+	APIReponseError
+}
+
+// ErrorNotFoundHandler http.Handler
+func ErrorNotFoundHandler() http.Handler {
+	return &notfound{
+		APIReponseError: APIReponseError{
+			ErrorNo:  404,
+			ErrorMsg: "not found",
+		},
+	}
+}
+
 // ErrorWrite 写入HTTPAPI错误
 func ErrorWrite(w http.ResponseWriter, status int, errno int, err error) {
 	resp := &APIReponseError{

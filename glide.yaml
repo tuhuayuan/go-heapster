@@ -1,9 +1,8 @@
 package: zonst/qipai/gameheathysrv
+ignore:
+- zonst/qipai-golang-libs/httputil
+
 import:
-- package: zonst/qipai-golang-libs/httputil
-  version: evo
-  repo: http://git.xq5.com:/qipai-golang-libs/httputil.git
-  vcs: git
 - package: zonst/qipai/logagent
   version: master
   repo: http://git.xq5.com:/qipai-apisrv/logagent.git

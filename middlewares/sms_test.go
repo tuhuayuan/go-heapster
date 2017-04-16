@@ -45,10 +45,11 @@ func TestSMSHelper(t *testing.T) {
 		Username: "",
 		Password: "",
 	}
-	ctx := httputil.NewHTTPContext()
-	handler := ctx.HandleFunc(SMSHelper("unicom", config),
+	ctx := httputil.WithHTTPContext(nil)
+	handler := httputil.HandleFunc(ctx,
+		SMSHelper("unicom", config),
 		func(w http.ResponseWriter, r *http.Request) {
-			provider := GetSMSProvider(r, "unicom")
+			provider := GetSMSProvider(r.Context(), "unicom")
 			provider.FetchReceipts()
 		})
 	req := httptest.NewRequest("GET", "/", bytes.NewReader([]byte{}))

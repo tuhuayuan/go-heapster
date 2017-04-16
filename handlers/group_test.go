@@ -23,9 +23,9 @@ import (
 var testingID string
 
 func TestCreateGroupHandler(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&CreateGroupReq{}),
 		CreateGroupHandler)
 
@@ -72,9 +72,9 @@ func TestCreateGroupHandler(t *testing.T) {
 }
 
 func TestFetchGroupHandler(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&FetchGroupReq{}),
 		FetchGroupHandler)
 
@@ -87,9 +87,9 @@ func TestFetchGroupHandler(t *testing.T) {
 }
 
 func TestUpdateGroupHandler(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&UpdateGroupReq{}),
 		UpdateGroupHandler)
 	name := time.Now().String()
@@ -119,9 +119,9 @@ func TestUpdateGroupHandler(t *testing.T) {
 }
 
 func TestDeleteGroupHandler(t *testing.T) {
-	ctx := httputil.NewHTTPContext()
-	ctx.Use(middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	handler := ctx.HandleFunc(
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
 		middlewares.BindBody(&DeleteGroupReq{}),
 		DeleteGroupHandler)
 	data := []byte(`
