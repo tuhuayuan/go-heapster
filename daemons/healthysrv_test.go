@@ -27,5 +27,7 @@ func TestHealthySrv(t *testing.T) {
 	srv.RunInputs()
 
 	// stay alive
-	time.Sleep(600 * time.Second)
+	time.Sleep(10 * time.Second)
+	srv.StopInputs()
+
 }

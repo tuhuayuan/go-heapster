@@ -82,7 +82,7 @@ func (srv *HealthySrv) Start() {
 	for {
 		select {
 		case <-srv.ctx.Done():
-			break
+			return
 		default:
 		}
 		ratelimiter.Accept([]string{limiterKey}, 5*time.Second, 1)
@@ -154,8 +154,7 @@ func (srv *HealthySrv) Stop() {
 
 // 服务内部初始化
 func (srv *HealthySrv) init() {
-	srv.ctx = context.Background()
-	srv.ctx = middlewares.WithLogger(srv.ctx, srv.LogLevel, os.Stdout)
+	srv.ctx = middlewares.WithLogger(context.Background(), srv.LogLevel, os.Stdout)
 	srv.ctx = middlewares.WithRedisConn(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
 	srv.ctx = middlewares.WithRateLimiter(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
 

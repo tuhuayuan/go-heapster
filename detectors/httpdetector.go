@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
 	"zonst/qipai/gamehealthysrv/models"
 )
 
@@ -39,7 +40,6 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 				req.Host = hp.Host
 			}
 			dtr.reqs = append(dtr.reqs, req)
-			fmt.Println(req)
 		}
 	}
 	return dtr, nil

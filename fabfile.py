@@ -1,3 +1,5 @@
+#! usr/bin/python  
+#pylint: disable=all 
 from __future__ import with_statement
 from fabric.api import local, settings, abort, run, cd, env, put,lcd
 
@@ -18,8 +20,8 @@ def build(os='darwin', arch='amd64', binary=BIN_NAME):
 service = '/usr/lib/systemd/system/' + SERVICE_NAME
 
 targetDir = {
-    "bin_dir": '/data/gamesmssrv/bin',
-    "conf_dir": '/data/gamesmssrv/configs',
+    "bin_dir": '/data/'+BIN_NAME+'/bin',
+    "conf_dir": '/data/'+BIN_NAME+'/configs',
 }
 
 user = "gamesms"
@@ -36,7 +38,7 @@ def deploy():
     preDeploy()
     with cd(targetDir["bin_dir"]):
         put('./build/linux/amd64/' + BIN_NAME, BIN_NAME, use_sudo=True)
-        run('chmod u+x ' + BIN_NAME)
+        run('sudo chmod u+x ' + BIN_NAME)
         run('sudo chown ' + user + ':' + group + ' ' + BIN_NAME)
 
     put('./configs/remote/gamesmssrv.json', targetDir["conf_dir"], use_sudo=True)

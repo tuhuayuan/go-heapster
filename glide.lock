@@ -1,5 +1,5 @@
-hash: c597691f5ee55eb44a7b0086f480e27151d40dbf58a7872d22b3a70b60156f68
-updated: 2017-04-12T11:23:00.704821334+08:00
+hash: 58dfe9bc5fed4cf72c9124a2738c4afc1fabbbf096fa406e9e8e528863efc38d
+updated: 2017-04-17T10:48:46.104456264+08:00
 imports:
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
@@ -16,6 +16,10 @@ imports:
   subpackages:
   - internal
   - redis
+- name: github.com/gorilla/context
+  version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
+- name: github.com/gorilla/mux
+  version: 599cba5e7b6137d46ddf58fb1765f5d928e69604
 - name: github.com/juju/ratelimit
   version: acf38b000a03e4ab89e40f20f1e548f4e6ac7f72
 - name: github.com/Sirupsen/logrus
@@ -45,7 +49,7 @@ imports:
   - encoding/simplifiedchinese
   - transform
 - name: zonst/qipai-golang-libs/httputil
-  version: 8eaf84dbe2a62ea667ccd668123598ac2efa73c5
+  version: cfb5a39b079c28c2c8e3f6b3fc1be744efc26e99
   repo: http://git.xq5.com:/qipai-golang-libs/httputil.git
   vcs: git
 - name: zonst/qipai/logagent

@@ -2,7 +2,6 @@
     {
         "id": "testsms1",
         "type": "sms",
-        "version": 1,
         "config": {
             "type": "unicom",
             "sp": "103905",
@@ -16,7 +15,6 @@
     {
         "id": "testsms2",
         "type": "sms",
-        "version": 1,
         "config": {
             "type": "unicom",
             "sp": "103905",
