@@ -10,6 +10,7 @@ import (
 // CreateNotifierReq 创建请求
 type CreateNotifierReq struct {
 	Type   string                 `json:"type"`
+	Name   string                 `json:"name"`
 	Config map[string]interface{} `json:"config"`
 }
 
@@ -43,6 +44,7 @@ func CreateNotifierHandler(w http.ResponseWriter, r *http.Request) {
 	model := &models.HeapsterNotifier{
 		ID:     models.NewSerialNumber(),
 		Type:   req.Type,
+		Name:   req.Name,
 		Config: req.Config,
 	}
 
@@ -98,6 +100,7 @@ func UpdateNotifierHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	model.Type = req.Type
+	model.Name = req.Name
 	model.Config = req.Config
 	if err := model.Save(ctx); err != nil {
 		middlewares.ErrorWrite(w, 200, 3, err)

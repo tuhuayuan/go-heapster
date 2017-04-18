@@ -280,6 +280,7 @@ func (hst *Heapster) Delete(ctx context.Context) error {
 // HeapsterNotifier 就是自定义的LabelSet
 type HeapsterNotifier struct {
 	ID      SerialNumber `json:"id"`
+	Name    string       `json:"name"`
 	Type    string       `json:"type"`
 	Version int          `json:"version,omitempty"`
 	Config  map[string]interface{}

@@ -43,7 +43,7 @@ func BindBody(ptrStruct interface{}) http.HandlerFunc {
 		structBody := reflect.New(structType.Elem())
 		contentType := r.Header.Get("Content-Type")
 		// 支持json、form、querystring三种方式
-		if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" {
+		if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" || r.Method == "DELETE" {
 			if strings.Contains(contentType, "json") {
 				var bodyData []byte
 				bodyData, err = ioutil.ReadAll(r.Body)
