@@ -45,7 +45,7 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 2, err)
 	}
-	excluded, err := models.ParseEndpoints(req.Endpoints, true)
+	excluded, err := models.ParseEndpoints(req.Excluded, true)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 3, err)
 	}
@@ -99,7 +99,7 @@ func UpdateGroupHandler(w http.ResponseWriter, r *http.Request) {
 		middlewares.ErrorWrite(w, 200, 3, err)
 		return
 	}
-	model.Excluded, err = models.ParseEndpoints(req.Endpoints, true)
+	model.Excluded, err = models.ParseEndpoints(req.Excluded, true)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 4, err)
 		return

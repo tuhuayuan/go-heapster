@@ -69,6 +69,7 @@ func TestCreateGroupHandler(t *testing.T) {
 	assert.NoError(t, json.Unmarshal(body, &g))
 	testingID = string(g.ID)
 	fmt.Println(testingID)
+	fmt.Println(string(body))
 }
 
 func TestFetchGroupHandler(t *testing.T) {
