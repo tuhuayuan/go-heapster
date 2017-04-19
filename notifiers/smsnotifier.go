@@ -67,40 +67,45 @@ type smsNotifier struct {
 
 // Send 短信不能发那么多字, 只能发一个大概的描述
 func (sms *smsNotifier) Send(ctx context.Context, reports models.Reports) error {
-	limiter := middlewares.GetRateLimiter(ctx)
-	if limiter.TryAccept(sms.numbers, 5*time.Minute, 1) {
-		return fmt.Errorf("rate controll")
-	}
-
 	var (
-		reportFor     string
-		errCount      int
-		lastErrTarget string
+		hp      *models.Heapster
+		limiter = middlewares.GetRateLimiter(ctx)
+		logger  = middlewares.GetLogger(ctx)
 	)
-	// 报告简单汇总 TODO: 后期放到Elastic里面处理
-	for i, rp := range reports {
+	for _, rp := range reports {
 		if rp.Validate() != nil {
 			continue
 		}
-		if i == 0 {
-			reportFor = string(rp.Labels[models.ReportNameFor])
+		hp = &models.Heapster{
+			ID: models.SerialNumber(string(rp.Labels[models.ReportNameFor])),
 		}
-		if rp.Labels[models.ReportNameResult] != "ok" {
-			errCount++
-			lastErrTarget = string(rp.Labels[models.ReportNameTarget])
+		if err := hp.Fill(ctx); err != nil {
+			continue
 		}
+		break
+	}
+	if hp == nil {
+		return fmt.Errorf("heapster not found")
+	}
+	if limiter.TryAccept([]string{string(hp.ID)}, 5*time.Minute, 1) {
+		return fmt.Errorf("rate controll by heapster")
+	}
+	if limiter.TryAccept(sms.numbers, 5*time.Minute, 1) {
+		return fmt.Errorf("rate controll by phone")
 	}
 	tpl := fmt.Sprintf("%s提醒：%s需要%s请查阅%s",
 		"监控",
-		"（"+reportFor+"）的实例（"+lastErrTarget+"）异常",
-		"处理",
+		"（"+hp.Name+"）的实例出现异常",
+		"及时处理",
 		"监控报告")
+	sendCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	go func() {
+		result := sms.provider.SendMessage(sendCtx, tpl, sms.numbers)
+		cancel()
+		if result.Result != 0 {
+			logger.Warnf("send sms error %s", result.Error())
+		}
+	}()
 
-	sendCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	result := sms.provider.SendMessage(sendCtx, tpl, sms.numbers)
-	cancel()
-	if result.Result != 0 {
-		return result
-	}
 	return nil
 }

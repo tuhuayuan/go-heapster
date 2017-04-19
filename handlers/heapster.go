@@ -15,8 +15,7 @@ type CreateHeapsterReq struct {
 	Port       int           `json:"port"`
 	Timeout    time.Duration `json:"timeout"`
 	Interval   time.Duration `json:"interval"`
-	Healthy    int           `json:"healthy_threshold"`
-	UnHealthy  int           `json:"unhealthy_threshold"`
+	Threshold  int           `json:"threshold"`
 	Groups     []string      `json:"groups"`
 	Notifiers  []string      `json:"notifiers"`
 	AcceptCode []int         `json:"accept_code,omitempty"`
@@ -58,8 +57,7 @@ func CreateHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 		Port:       req.Port,
 		Timeout:    req.Timeout,
 		Interval:   req.Interval,
-		Healthy:    req.Healthy,
-		UnHealthy:  req.UnHealthy,
+		Threshold:  req.Threshold,
 		Groups:     req.Groups,
 		Notifiers:  req.Notifiers,
 		AcceptCode: req.AcceptCode,
@@ -125,8 +123,7 @@ func UpdateHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 	model.Port = req.Port
 	model.Timeout = req.Timeout
 	model.Interval = req.Interval
-	model.Healthy = req.Healthy
-	model.UnHealthy = req.UnHealthy
+	model.Threshold = req.Threshold
 	model.Groups = req.Groups
 	model.Notifiers = req.Notifiers
 	model.AcceptCode = req.AcceptCode

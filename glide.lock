@@ -1,5 +1,5 @@
-hash: 58dfe9bc5fed4cf72c9124a2738c4afc1fabbbf096fa406e9e8e528863efc38d
-updated: 2017-04-17T10:48:46.104456264+08:00
+hash: b35b9c5a360fef128094e1b6597be800e251aac9c8dc6badd867fd7a807cfd81
+updated: 2017-04-18T17:39:17.065314597+08:00
 imports:
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
@@ -20,8 +20,10 @@ imports:
   version: 08b5f424b9271eedf6f9f0ce86cb9396ed337a42
 - name: github.com/gorilla/mux
   version: 599cba5e7b6137d46ddf58fb1765f5d928e69604
-- name: github.com/juju/ratelimit
-  version: acf38b000a03e4ab89e40f20f1e548f4e6ac7f72
+- name: github.com/influxdata/influxdb
+  version: 1bcf3ae74c6b9c4897dab68d513d056277eb24f7
+  subpackages:
+  - client/v2
 - name: github.com/Sirupsen/logrus
   version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/ugorji/go

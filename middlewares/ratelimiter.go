@@ -17,7 +17,7 @@ type rateLimiterContextKey string
 
 // 上下文key
 const (
-	RateLimiterContextKey rateLimiterContextKey = "_ratelimiter_"
+	rateLimiterContextName rateLimiterContextKey = "_ratelimiter_"
 )
 
 // RateLimiter 频率控制接口
@@ -122,7 +122,7 @@ func (limiter *redisRateLimiter) Accept(keys []string, every time.Duration, time
 func RateLimitEvery(every time.Duration, times int) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		limiter := ctx.Value(RateLimiterContextKey).(RateLimiter)
+		limiter := ctx.Value(rateLimiterContextName).(RateLimiter)
 		rawKeys := ctx.Value("_ratelimit_key").(map[string]interface{})
 		keys := make([]string, 0, len(rawKeys))
 
@@ -162,12 +162,12 @@ func RateLimitByIP() http.HandlerFunc {
 // WithRateLimiter 装箱
 func WithRateLimiter(parent context.Context, host string, passwd string, db int) context.Context {
 	limiter := NewRedisRateLimiter(host, passwd, db)
-	return context.WithValue(parent, RateLimiterContextKey, limiter)
+	return context.WithValue(parent, rateLimiterContextName, limiter)
 }
 
 // GetRateLimiter 拆箱
 func GetRateLimiter(ctx context.Context) RateLimiter {
-	return ctx.Value(RateLimiterContextKey).(RateLimiter)
+	return ctx.Value(rateLimiterContextName).(RateLimiter)
 }
 
 // RateLimiterHandler 中间件
@@ -176,7 +176,7 @@ func RateLimiterHandler(host string, passwd string, db int) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		httputil.WithValue(ctx, RateLimiterContextKey, limiter)
+		httputil.WithValue(ctx, rateLimiterContextName, limiter)
 		httputil.Next(ctx)
 	}
 }

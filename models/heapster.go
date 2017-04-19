@@ -19,8 +19,9 @@ type HealthyStatus string
 // 三种健康状态常量
 const (
 	HealthyStatusUnknown HealthyStatus = "unknown"
-	HealthyStatusGood    HealthyStatus = "up"
-	HealthyStatusBad     HealthyStatus = "down"
+	HealthyStatusGreen   HealthyStatus = "green"
+	HealthyStatusYelow   HealthyStatus = "yelow"
+	HealthyStatusRed     HealthyStatus = "red"
 )
 
 // MarshalJSON json编码实现
@@ -70,8 +71,7 @@ type Heapster struct {
 	Port      int           `json:"port"`
 	Timeout   time.Duration `json:"timeout"`
 	Interval  time.Duration `json:"interval"`
-	Healthy   int           `json:"healthy_threshold"`
-	UnHealthy int           `json:"unhealthy_threshold"`
+	Threshold int           `json:"threshold"`
 	Groups    []string      `json:"groups"`
 	Notifiers []string      `json:"notifiers"`
 	Version   int           `json:"version,omitempty"`
@@ -139,10 +139,12 @@ func (hst *Heapster) GetStatus(ctx context.Context) HealthyStatus {
 		return HealthyStatusUnknown
 	}
 	switch HealthyStatus(status) {
-	case HealthyStatusBad:
-		return HealthyStatusBad
-	case HealthyStatusGood:
-		return HealthyStatusGood
+	case HealthyStatusRed:
+		return HealthyStatusRed
+	case HealthyStatusYelow:
+		return HealthyStatusYelow
+	case HealthyStatusGreen:
+		return HealthyStatusGreen
 	default:
 		return HealthyStatusUnknown
 	}

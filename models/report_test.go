@@ -1,16 +1,18 @@
 package models
 
 import (
-	"context"
 	"fmt"
 	"testing"
 	"zonst/qipai/gamehealthysrv/middlewares"
+
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestReportSave(t *testing.T) {
-	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
+	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
+	assert.NoError(t, err)
 
 	rps := Reports{
 		Report{
@@ -36,10 +38,18 @@ func TestReportSave(t *testing.T) {
 	assert.NoError(t, rps.Save(ctx))
 }
 
-func TestReportFetch(t *testing.T) {
-	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
-
-	rps, err := FetchReportsFor(ctx, LabelValue("testreport1"))
+func TestFetchReports(t *testing.T) {
+	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
 	assert.NoError(t, err)
-	fmt.Println(rps[0])
+
+	rps, err := FetchReports(ctx, LabelValue("testreport1"), 100*time.Minute)
+	assert.NoError(t, err)
+	fmt.Println(rps)
+}
+
+func TestFetchReportsAggregation(t *testing.T) {
+	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
+	assert.NoError(t, err)
+
+	fmt.Println(FetchReportsAggregation(ctx, "testreport1", 100*time.Minute))
 }

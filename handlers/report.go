@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
 )
@@ -23,7 +24,7 @@ func FetchReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	req := body.(*FetchReportReq)
 
-	rps, err := models.FetchReportsFor(ctx, models.LabelValue(req.HeaspterID))
+	rps, err := models.FetchReports(ctx, models.LabelValue(req.HeaspterID), 15*time.Minute)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 2, err)
 		return

@@ -1,10 +1,9 @@
 package: zonst/qipai/gameheathysrv
-
 import:
 - package: zonst/qipai-golang-libs/httputil
+  version: furious
   repo: http://git.xq5.com:/qipai-golang-libs/httputil.git
   vcs: git
-  version: furious
 - package: zonst/qipai/logagent
   version: master
   repo: http://git.xq5.com:/qipai-apisrv/logagent.git
@@ -13,7 +12,10 @@ import:
   - output/elastic
   - output/stdout
   - utils
-- package: github.com/juju/ratelimit
+- package: github.com/influxdata/influxdb
+  version: ^1.2.2
+  subpackages:
+  - client/v2
 testImport:
 - package: github.com/stretchr/testify
   subpackages:

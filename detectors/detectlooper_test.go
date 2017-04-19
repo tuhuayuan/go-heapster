@@ -41,10 +41,9 @@ func TestDetectLooper(t *testing.T) {
 			Name:      "test_manager",
 			Type:      models.CheckType("test"),
 			Port:      5200,
-			Timeout:   2 * time.Second,
-			Interval:  2 * time.Second,
-			Healthy:   3,
-			UnHealthy: 3,
+			Timeout:   1 * time.Second,
+			Interval:  5 * time.Second,
+			Threshold: 3,
 		}
 	)
 
