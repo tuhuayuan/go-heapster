@@ -1,0 +1,15 @@
+[Service]
+Environment=CONF_DIR=/data/gamehealthysrv/configs
+Environment=BIN_DIR=/data/gamehealthysrv/bin
+Environment=LOG_LEVEL=5
+
+User=api
+Group=api
+
+ExecStart=/bin/sh -c '${BIN_DIR}/gamehealthysrv -configs ${CONF_DIR} -v ${LOG_LEVEL}'
+
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

@@ -3,30 +3,30 @@
         {
             "type": "gamehealthysrv",
             
-            "redis_host": "localhost:6379",
-            "redis_password": "",
+            "redis_host": "10.66.221.204:6379",
+            "redis_password": "crs-6kck8p32:qipai0918",
             "redis_db": 0,
 
-            "influx_url": "http://localhost:8086",
+            "influx_url": "http://118.89.26.85:8086",
             "influx_user": "",
             "influx_passwd": "",
-            "influx_db": "gamehealthy",
+            "influx_db": "alarm_metric",
 
             "log_level": 5
         },
         {
             "type": "gamehealthyapisrv",
             
-            "host": "0.0.0.0:5000",
+            "host": "0.0.0.0:5050",
 
-            "redis_host": "localhost:6379",
-            "redis_password": "",
+            "redis_host": "10.66.221.204:6379",
+            "redis_password": "crs-6kck8p32:qipai0918",
             "redis_db": 0,
 
-            "influx_url": "http://localhost:8086",
+            "influx_url": "http://118.89.26.85:8086",
             "influx_user": "",
             "influx_passwd": "",
-            "influx_db": "gamehealthy",
+            "influx_db": "alarm_metric",
 
             "log_level": 5,
             "accesskeys": [

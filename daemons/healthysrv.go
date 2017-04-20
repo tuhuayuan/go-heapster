@@ -26,6 +26,7 @@ type HealthySrv struct {
 	InfluxURL    string `json:"influx_url"`
 	InfluxUser   string `json:"influx_user"`
 	InfluxPasswd string `json:"influx_passwd"`
+	InfluxDB     string `json:"influx_db"`
 
 	// 联通短信配置
 	UnicomSP       string `json:"unicom_sp"`
@@ -247,7 +248,7 @@ func (srv *HealthySrv) init() {
 	srv.ctx = middlewares.WithLogger(context.Background(), srv.LogLevel, os.Stdout)
 	srv.ctx = middlewares.WithRedisConn(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
 	srv.ctx = middlewares.WithRateLimiter(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
-	srv.ctx, err = middlewares.WithInfluxDB(srv.ctx, srv.InfluxURL, srv.InfluxUser, srv.InfluxPasswd)
+	srv.ctx, err = middlewares.WithInfluxDB(srv.ctx, srv.InfluxURL, srv.InfluxUser, srv.InfluxPasswd, srv.InfluxDB)
 	if err != nil {
 		panic(err)
 	}

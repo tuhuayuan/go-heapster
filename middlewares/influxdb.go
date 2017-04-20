@@ -13,7 +13,8 @@ type influxdbContextKey string
 
 // 上下文key
 const (
-	influxdbContextName influxdbContextKey = "_influxdb_"
+	influxdbContextName   influxdbContextKey = "_influxdb_"
+	influxdbContextDBName influxdbContextKey = "_influxdb_db"
 )
 
 // GetInfluxDB 获取上下文连接
@@ -21,8 +22,13 @@ func GetInfluxDB(ctx context.Context) influxdb.Client {
 	return ctx.Value(influxdbContextName).(influxdb.Client)
 }
 
+// GetInfluxDBName 获取配置的DB
+func GetInfluxDBName(ctx context.Context) string {
+	return ctx.Value(influxdbContextDBName).(string)
+}
+
 // WithInfluxDB 返回带db连接的上下文
-func WithInfluxDB(parent context.Context, host string, user string, passwd string) (context.Context, error) {
+func WithInfluxDB(parent context.Context, host string, user string, passwd string, db string) (context.Context, error) {
 	client, err := influxdb.NewHTTPClient(influxdb.HTTPConfig{
 		Addr:     host,
 		Username: user,
@@ -31,11 +37,13 @@ func WithInfluxDB(parent context.Context, host string, user string, passwd strin
 	if err != nil {
 		return nil, err
 	}
-	return context.WithValue(parent, influxdbContextName, client), nil
+	ctx := context.WithValue(parent, influxdbContextName, client)
+	ctx = context.WithValue(ctx, influxdbContextDBName, db)
+	return ctx, nil
 }
 
 // InfluxDBHandler http中间件
-func InfluxDBHandler(host string, user string, passwd string) http.HandlerFunc {
+func InfluxDBHandler(host string, user string, passwd string, db string) http.HandlerFunc {
 	client, err := influxdb.NewHTTPClient(influxdb.HTTPConfig{
 		Addr:     host,
 		Username: user,
@@ -46,7 +54,9 @@ func InfluxDBHandler(host string, user string, passwd string) http.HandlerFunc {
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		httputil.WithValue(ctx, influxdbContextName, client)
+
+		ctx = context.WithValue(ctx, influxdbContextDBName, db)
+		ctx = httputil.WithValue(ctx, influxdbContextName, client)
 		httputil.Next(ctx)
 	}
 }

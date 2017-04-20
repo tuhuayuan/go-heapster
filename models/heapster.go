@@ -74,7 +74,7 @@ type Heapster struct {
 	Groups    []string      `json:"groups"`
 	Notifiers []string      `json:"notifiers"`
 	Version   int           `json:"version,omitempty"`
-
+	Status    HealthyStatus `json:"status,omitempty"`
 	// for http
 	AcceptCode []int  `json:"accept_code,omitempty"`
 	Host       string `json:"host,omitempty"`
@@ -253,6 +253,12 @@ func (hst *Heapster) Fill(ctx context.Context) error {
 	if err := json.Unmarshal(data, hst); err != nil {
 		return err
 	}
+	// 获取状态
+	status, err := redis.String(conn.Do("HGET", storeKey, "status"))
+	if err != nil {
+		status = string(HealthyStatusUnknown)
+	}
+	hst.Status = HealthyStatus(status)
 	// 版本计算
 	version, err := redis.Int(conn.Do("HGET", storeKey, "version"))
 	if err != nil {
@@ -343,7 +349,6 @@ func (hn *HeapsterNotifier) Fill(ctx context.Context) error {
 	if err := json.Unmarshal(data, hn); err != nil {
 		return err
 	}
-
 	hn.Version, err = redis.Int(conn.Do("HGET", storeKey, "version"))
 	if err != nil {
 		return err

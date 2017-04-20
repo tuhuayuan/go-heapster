@@ -8,7 +8,7 @@ import (
 )
 
 func TestWithInfluxDB(t *testing.T) {
-	ctx, err := WithInfluxDB(nil, "http://localhost:8086", "", "")
+	ctx, err := WithInfluxDB(nil, "http://localhost:8086", "", "", "default")
 	assert.NoError(t, err)
 
 	client := GetInfluxDB(ctx)

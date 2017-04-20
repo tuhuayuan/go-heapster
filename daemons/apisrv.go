@@ -30,6 +30,7 @@ type HealthyAPISrv struct {
 	InfluxURL    string `json:"influx_url"`
 	InfluxUser   string `json:"influx_user"`
 	InfluxPasswd string `json:"influx_passwd"`
+	InfluxDB     string `json:"influx_db"`
 
 	// 通用配置
 	LogLevel   int      `json:"log_level"`
@@ -69,16 +70,16 @@ func HealthyAPISrvInit(part *utils.ConfigPart) (srv *HealthyAPISrv, err error) {
 // Start 组件启动
 func (srv *HealthyAPISrv) Start() {
 	logger := middlewares.GetLogger(srv.ctx)
-	logger.Infof("gamesms server listen at %s", srv.Host)
+	logger.Infof("api server listen at %s", srv.Host)
 	if err := srv.server.ListenAndServe(); err != nil {
-		logger.Fatalf("gamesms server error %s", err)
+		logger.Fatalf("api server error %s", err)
 	}
 }
 
 // Stop 组件停止
 func (srv *HealthyAPISrv) Stop() {
 	logger := middlewares.GetLogger(srv.ctx)
-	logger.Infof("gamesms server stop.")
+	logger.Infof("api server stop.")
 }
 
 // 服务内部初始化
@@ -94,7 +95,7 @@ func (srv *HealthyAPISrv) init() {
 	srv.ctx = middlewares.WithLogger(srv.ctx, srv.LogLevel, os.Stdout)
 	httputil.Use(srv.ctx, middlewares.LoggerHandler(srv.LogLevel, os.Stdout))
 	httputil.Use(srv.ctx, middlewares.RedisConnHandler(srv.RedisHost, srv.RedisPassword, srv.RedisDB))
-	httputil.Use(srv.ctx, middlewares.InfluxDBHandler(srv.InfluxURL, srv.InfluxUser, srv.InfluxPasswd))
+	httputil.Use(srv.ctx, middlewares.InfluxDBHandler(srv.InfluxURL, srv.InfluxUser, srv.InfluxPasswd, srv.InfluxDB))
 
 	// api 版本
 	v1 := r.PathPrefix("/v1").Subrouter()

@@ -24,8 +24,8 @@ targetDir = {
     "conf_dir": '/data/'+BIN_NAME+'/configs',
 }
 
-user = "gamesms"
-group = "gamesms"
+user = "api"
+group = "api"
 
 def preDeploy():
     run('sudo adduser -U ' + user, warn_only=True)
@@ -41,7 +41,7 @@ def deploy():
         run('sudo chmod u+x ' + BIN_NAME)
         run('sudo chown ' + user + ':' + group + ' ' + BIN_NAME)
 
-    put('./configs/remote/gamesmssrv.json', targetDir["conf_dir"], use_sudo=True)
+    put('./configs/test/default.json', targetDir["conf_dir"], use_sudo=True)
     put('./' + SERVICE_NAME, service, use_sudo=True)
     run('sudo systemctl enable ' + SERVICE_NAME)
 

@@ -15,7 +15,7 @@ import (
 func TestFetchReports(t *testing.T) {
 	ctx := httputil.WithHTTPContext(nil)
 	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
-	httputil.Use(ctx, middlewares.InfluxDBHandler("http://localhost:8086", "", ""))
+	httputil.Use(ctx, middlewares.InfluxDBHandler("http://localhost:8086", "", "", "default"))
 
 	rp := models.Report{
 		Labels: models.LabelSet{
@@ -27,7 +27,7 @@ func TestFetchReports(t *testing.T) {
 	rps := models.Reports{
 		rp,
 	}
-	outCtx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
+	outCtx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "", "default")
 	assert.NoError(t, err)
 	assert.NoError(t, rps.Save(outCtx))
 

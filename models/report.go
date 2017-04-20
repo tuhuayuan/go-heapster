@@ -47,7 +47,7 @@ func (rps Reports) Save(ctx context.Context) error {
 	defer client.Close()
 
 	bp, err := influxdb.NewBatchPoints(influxdb.BatchPointsConfig{
-		Database:  "gamehealthy",
+		Database:  middlewares.GetInfluxDBName(ctx),
 		Precision: "ns",
 	})
 	if err != nil {
@@ -96,7 +96,7 @@ func FetchErrorReports(ctx context.Context, reportFor LabelValue, last time.Dura
 
 	req := influxdb.NewQueryWithParameters(
 		"SELECT success FROM report WHERE time>=$last and heapster_id=$heapster and success <= 0 group by report_target",
-		"gamehealthy",
+		middlewares.GetInfluxDBName(ctx),
 		"RFC3339",
 		map[string]interface{}{
 			"last":     time.Now().Add(-last),
@@ -133,7 +133,7 @@ func FetchReportsAggregation(ctx context.Context, reportFor LabelValue, last tim
 
 	req := influxdb.NewQueryWithParameters(
 		"SELECT SUM(success) AS success FROM report WHERE time>=$last and heapster_id=$heapster group by report_target",
-		"gamehealthy",
+		middlewares.GetInfluxDBName(ctx),
 		"RFC3339",
 		map[string]interface{}{
 			"last":     time.Now().Add(-last),
