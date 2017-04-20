@@ -123,6 +123,5 @@ func TestHeapsterDiff(t *testing.T) {
 		HeapsterSetKey(hp4.ID): hp4,
 	}
 
-	hkeys := hset1.Diff(hset2)
-	fmt.Println(hkeys)
+	fmt.Println(hset1.Diff(hset2))
 }

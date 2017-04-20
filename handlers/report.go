@@ -11,7 +11,8 @@ import (
 
 // FetchReportReq 获取报告请求
 type FetchReportReq struct {
-	HeaspterID string `json:"heapster" http:"heapster"`
+	HeaspterID string        `json:"heapster" http:"heapster"`
+	LastMinute time.Duration `json:"last" http:"last"`
 }
 
 // FetchReportHandler 获取
@@ -24,7 +25,7 @@ func FetchReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	req := body.(*FetchReportReq)
 
-	rps, err := models.FetchReports(ctx, models.LabelValue(req.HeaspterID), 15*time.Minute)
+	rps, err := models.FetchErrorReports(ctx, models.LabelValue(req.HeaspterID), req.LastMinute*time.Minute)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 2, err)
 		return

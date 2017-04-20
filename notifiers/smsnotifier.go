@@ -20,27 +20,25 @@ var smsNotifierCreator = func(model models.HeapsterNotifier) (Notifier, error) {
 		spPassword string
 		numbers    []string
 	)
-	config, ok := model.Config["sms"].(map[string]interface{})
-	// 需要解析配置
-	if !ok {
-		return nil, fmt.Errorf("no config found")
-	}
-	if val, ok := config["type"].(string); ok {
+
+	if val, ok := model.Config["type"].(string); ok {
 		spType = val
 	}
 	// 如果使用联通的短信接口
 	if spType == "unicom" {
-		if val, ok := config["sp"].(string); ok {
+		if val, ok := model.Config["sp"].(string); ok {
 			spID = val
 		}
-		if val, ok := config["username"].(string); ok {
+		if val, ok := model.Config["username"].(string); ok {
 			spUsername = val
 		}
-		if val, ok := config["password"].(string); ok {
+		if val, ok := model.Config["password"].(string); ok {
 			spPassword = val
 		}
-		if val, ok := config["targets"].([]string); ok {
-			numbers = val
+		if vals, ok := model.Config["targets"].([]interface{}); ok {
+			for _, v := range vals {
+				numbers = append(numbers, v.(string))
+			}
 		}
 		smsConfig := middlewares.UnicomConfig{
 			SPCode:   spID,
@@ -72,20 +70,21 @@ func (sms *smsNotifier) Send(ctx context.Context, reports models.Reports) error 
 		limiter = middlewares.GetRateLimiter(ctx)
 		logger  = middlewares.GetLogger(ctx)
 	)
+
 	for _, rp := range reports {
-		if rp.Validate() != nil {
-			continue
+		if err := rp.Validate(); err != nil {
+			logger.Warnf("report ignored %v", err)
 		}
 		hp = &models.Heapster{
 			ID: models.SerialNumber(string(rp.Labels[models.ReportNameFor])),
 		}
 		if err := hp.Fill(ctx); err != nil {
-			continue
+			logger.Warnf("report ignored %v", err)
 		}
 		break
 	}
 	if hp == nil {
-		return fmt.Errorf("heapster not found")
+		return fmt.Errorf("report missing heapster")
 	}
 	if limiter.TryAccept([]string{string(hp.ID)}, 5*time.Minute, 1) {
 		return fmt.Errorf("rate controll by heapster")

@@ -40,6 +40,11 @@ type FetchHeapsterReq struct {
 	ID string `json:"id,omitempty" http:"id,omitempty"`
 }
 
+// FetchHeapsterStatusReq 获取状态请求
+type FetchHeapsterStatusReq struct {
+	ID string `json:"id,omitempty" http:"id,omitempty"`
+}
+
 // CreateHeapsterHandler 创建
 func CreateHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -55,8 +60,8 @@ func CreateHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 		Name:       req.Name,
 		Type:       models.CheckType(req.Type),
 		Port:       req.Port,
-		Timeout:    req.Timeout,
-		Interval:   req.Interval,
+		Timeout:    req.Timeout * time.Second,
+		Interval:   req.Interval * time.Second,
 		Threshold:  req.Threshold,
 		Groups:     req.Groups,
 		Notifiers:  req.Notifiers,
@@ -121,8 +126,8 @@ func UpdateHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 	model.Name = req.Name
 	model.Type = models.CheckType(req.Type)
 	model.Port = req.Port
-	model.Timeout = req.Timeout
-	model.Interval = req.Interval
+	model.Timeout = req.Timeout * time.Second
+	model.Interval = req.Interval * time.Second
 	model.Threshold = req.Threshold
 	model.Groups = req.Groups
 	model.Notifiers = req.Notifiers
@@ -171,6 +176,43 @@ func FetchHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(hs)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 3, err)
+	}
+	w.WriteHeader(200)
+	w.Write(data)
+}
+
+// FetchHeapsterStatusHandler 批量获取状态
+func FetchHeapsterStatusHandler(w http.ResponseWriter, r *http.Request) {
+	var statusList []models.HeapsterStatusSet
+
+	ctx := r.Context()
+	body, err := middlewares.GetBindBody(ctx)
+	if err != nil {
+		middlewares.ErrorWrite(w, 200, 1, err)
+		return
+	}
+	req := body.(*FetchHeapsterStatusReq)
+
+	if req.ID == "" {
+		var err error
+		statusList, err = models.FetchHeapsterStatus(ctx)
+		if err != nil {
+			middlewares.ErrorWrite(w, 200, 2, err)
+			return
+		}
+	} else {
+		model := &models.Heapster{
+			ID: models.SerialNumber(req.ID),
+		}
+		statusList = append(statusList, models.HeapsterStatusSet{
+			ID:     model.ID,
+			Status: model.GetStatus(ctx),
+		})
+	}
+
+	data, err := json.Marshal(statusList)
+	if err != nil {
+		middlewares.ErrorWrite(w, 200, 2, err)
 	}
 	w.WriteHeader(200)
 	w.Write(data)

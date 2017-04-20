@@ -70,14 +70,15 @@ func (dtr *tcpDetector) plumb(ctx context.Context) (models.Reports, error) {
 		if i == pages {
 			end = start + total%pageSize
 		}
+		// 并发访问
 		for _, addr := range dtr.address[start:end] {
 			dtr.wg.Add(1)
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
-			go func(addr *net.TCPAddr, ctx context.Context) {
+
+			go func(addr *net.TCPAddr, ctx context.Context, cancel func()) {
 				defer dtr.wg.Done()
 				defer cancel()
 				dialer := &net.Dialer{}
-
 				conn, err := dialer.DialContext(ctx, "tcp", addr.String())
 				if err != nil {
 					reports = append(reports, models.Report{
@@ -90,6 +91,7 @@ func (dtr *tcpDetector) plumb(ctx context.Context) (models.Reports, error) {
 					errs++
 					return
 				}
+				conn.Close()
 				reports = append(reports, models.Report{
 					Labels: models.LabelSet{
 						models.ReportNameFor:    models.LabelValue(dtr.model.ID),
@@ -97,8 +99,7 @@ func (dtr *tcpDetector) plumb(ctx context.Context) (models.Reports, error) {
 						models.ReportNameResult: models.LabelValue("ok"),
 					},
 				})
-				defer conn.Close()
-			}(addr, timeoutCtx)
+			}(addr, timeoutCtx, cancel)
 		}
 		dtr.wg.Wait()
 	}

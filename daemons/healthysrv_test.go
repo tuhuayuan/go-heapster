@@ -14,9 +14,15 @@ func TestHealthySrv(t *testing.T) {
         "input": [
            {  
                "type": "gamehealthysrv",
+
                "redis_host": "localhost:6379",
                "redis_password": "",
-               "redis_db": 8,
+               "redis_db": 0,
+
+               "influx_url": "http://localhost:8086",
+               "influx_user": "",
+               "influx_passwd": "",
+
                "log_level": 5
            }
         ]
@@ -27,7 +33,7 @@ func TestHealthySrv(t *testing.T) {
 	srv.RunInputs()
 
 	// stay alive
-	time.Sleep(10 * time.Second)
+	time.Sleep(600 * time.Second)
 	srv.StopInputs()
 
 }

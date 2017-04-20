@@ -8,7 +8,6 @@ import (
 
 	influxdb "github.com/influxdata/influxdb/client/v2"
 
-	"strconv"
 	"zonst/qipai/gamehealthysrv/middlewares"
 )
 
@@ -39,9 +38,6 @@ func (rp Report) Validate() error {
 	if rp.Labels[ReportNameTarget] == "" || !rp.Labels[ReportNameTarget].IsValid() {
 		return fmt.Errorf("ReportNameTarget field required")
 	}
-	if rp.Labels[ReportNameResult] == "" || !rp.Labels[ReportNameResult].IsValid() {
-		return fmt.Errorf("ReportNameResult field required")
-	}
 	return nil
 }
 
@@ -68,9 +64,9 @@ func (rps Reports) Save(ctx context.Context) error {
 		}
 		fields := make(map[string]interface{}, 2)
 		if string(rp.Labels[ReportNameResult]) == "ok" {
-			fields["success"] = -1.0
-		} else {
 			fields["success"] = 1.0
+		} else {
+			fields["success"] = -1.0
 		}
 
 		point, err := influxdb.NewPoint(
@@ -91,15 +87,15 @@ func (rps Reports) Save(ctx context.Context) error {
 	return nil
 }
 
-// FetchReports 获取制定目标的报告
-func FetchReports(ctx context.Context, reportFor LabelValue, last time.Duration) (Reports, error) {
+// FetchErrorReports 获取制定目标的报告
+func FetchErrorReports(ctx context.Context, reportFor LabelValue, last time.Duration) (Reports, error) {
 	var reports Reports
 
 	client := middlewares.GetInfluxDB(ctx)
 	defer client.Close()
 
 	req := influxdb.NewQueryWithParameters(
-		"SELECT report_target, success  FROM report WHERE time>=$last and heapster_id=$heapster group by report_target",
+		"SELECT success FROM report WHERE time>=$last and heapster_id=$heapster and success <= 0 group by report_target",
 		"gamehealthy",
 		"RFC3339",
 		map[string]interface{}{
@@ -118,21 +114,10 @@ func FetchReports(ctx context.Context, reportFor LabelValue, last time.Duration)
 					ReportNameFor: reportFor,
 				},
 			}
-			rp.Labels[ReportNameTarget] = LabelValue(val[1].(string))
+			rp.Labels[ReportNameTarget] = LabelValue(row.Tags["report_target"])
 			rp.Labels[ReportNameTimestamp] = LabelValue(val[0].(json.Number))
-			success, ok := row.Values[0][2].(json.Number)
-			if !ok {
-				success = "0.0"
-			}
-			healthyValue, err := strconv.ParseFloat(string(success), 64)
-			if err != nil {
-				healthyValue = 0.0
-			}
-			if healthyValue > 0.0 {
-				rp.Labels[ReportNameResult] = "ok"
-			} else {
-				rp.Labels[ReportNameResult] = "error"
-			}
+			rp.Labels[ReportNameResult] = "error"
+
 			reports = append(reports, rp)
 		}
 	}
@@ -154,7 +139,6 @@ func FetchReportsAggregation(ctx context.Context, reportFor LabelValue, last tim
 			"last":     time.Now().Add(-last),
 			"heapster": string(reportFor),
 		})
-	fmt.Println(req)
 	resp, err := client.Query(req)
 	if err != nil {
 		return nil, err

@@ -21,6 +21,7 @@ type Alert interface {
 
 // NewAlert 新建警报器
 func NewAlert(ctx context.Context, model models.Heapster) (Alert, error) {
+	logger := middlewares.GetLogger(ctx)
 	al := &defaultAlert{
 		model: model,
 		done:  make(chan struct{}),
@@ -32,7 +33,7 @@ func NewAlert(ctx context.Context, model models.Heapster) (Alert, error) {
 		for _, model := range notifierModels {
 			notifier, err := notifiers.NewNotifier(model)
 			if err != nil {
-				continue
+				logger.Warnf("load notifier error %v, heapster %s", err, model.ID)
 			}
 			al.notifiers = append(al.notifiers, notifier)
 		}
@@ -110,7 +111,9 @@ func (al *defaultAlert) TurnOn() error {
 					// 发通知
 					if !al.mute {
 						for _, nt := range al.notifiers {
-							nt.Send(al.ctx, rps)
+							if err := nt.Send(al.ctx, rps); err != nil {
+								logger.Warnf("send report error %v", err)
+							}
 						}
 					}
 					break

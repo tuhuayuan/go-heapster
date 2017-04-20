@@ -80,7 +80,7 @@ func (dtr *httpDetector) plumb(ctx context.Context) (models.Reports, error) {
 		for _, req := range dtr.reqs[start:end] {
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
 			dtr.wg.Add(1)
-			go func(req *http.Request, ctx context.Context) {
+			go func(req *http.Request, ctx context.Context, cancel func()) {
 				defer dtr.wg.Done()
 				defer cancel()
 
@@ -114,7 +114,7 @@ func (dtr *httpDetector) plumb(ctx context.Context) (models.Reports, error) {
 						},
 					})
 				}
-			}(req, timeoutCtx)
+			}(req, timeoutCtx, cancel)
 		}
 		dtr.wg.Wait()
 	}

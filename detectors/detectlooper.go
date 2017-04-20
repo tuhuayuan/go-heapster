@@ -93,7 +93,7 @@ func (dl *defaultLooper) Run() error {
 			dl.running = false
 		}()
 
-		ticker := time.NewTicker(time.Duration(dl.model.Interval))
+		ticker := time.NewTicker(dl.model.Interval)
 		defer ticker.Stop()
 
 		for {

@@ -6,6 +6,7 @@ import (
 
 	"sync"
 	"time"
+	"zonst/qipai/gamehealthysrv/alerts"
 	"zonst/qipai/gamehealthysrv/detectors"
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
@@ -21,6 +22,11 @@ type HealthySrv struct {
 	RedisPassword string `json:"redis_password"`
 	RedisDB       int    `json:"redis_db"`
 
+	// InfluxDB配置
+	InfluxURL    string `json:"influx_url"`
+	InfluxUser   string `json:"influx_user"`
+	InfluxPasswd string `json:"influx_passwd"`
+
 	// 联通短信配置
 	UnicomSP       string `json:"unicom_sp"`
 	UnicomUsername string `json:"unicom_username"`
@@ -34,6 +40,7 @@ type HealthySrv struct {
 	cancel  func()
 	done    chan struct{}
 	loopers map[models.SerialNumber]detectors.DetectLooper
+	alerts  map[models.SerialNumber]alerts.Alert
 }
 
 // 服务名称
@@ -55,6 +62,7 @@ func HealthySrvInit(part *utils.ConfigPart) (srv *HealthySrv, err error) {
 		},
 
 		loopers: make(map[models.SerialNumber]detectors.DetectLooper),
+		alerts:  make(map[models.SerialNumber]alerts.Alert),
 		done:    make(chan struct{}),
 	}
 	if err = utils.ReflectConfigPart(part, &config); err != nil {
@@ -87,45 +95,116 @@ func (srv *HealthySrv) Start() {
 		}
 		ratelimiter.Accept([]string{limiterKey}, 5*time.Second, 1)
 		// 加载所有模型
-		logger.Infof("reload heapters")
 		newSet, err = models.FetchHeapsters(srv.ctx)
 		if err != nil {
 			logger.Warnf("load heapster error %v", err)
 			continue
 		}
-		diffkeys := newSet.Diff(oldSet)
-
-		if len(diffkeys) == 0 {
-			logger.Infof("no changed")
+		added, modified, deleted := newSet.Diff(oldSet)
+		total := len(added) + len(modified) + len(deleted)
+		if total == 0 {
 			continue
 		} else {
-			logger.Infof("found %d heapster changed", len(diffkeys))
+			logger.Infof("found %d heapster changed", total)
 		}
-		// 重新加载差异数据
-		for _, k := range diffkeys {
-			model := models.Heapster{
-				ID: models.SerialNumber(k),
-			}
-			// 重新读取模型信息
-			if err := model.Fill(srv.ctx); err != nil {
-				logger.Warnf("load heapster %s error: %v", k, err)
-				continue
-			}
-			// 创建新的looper丢弃老looper
-			looper, err := detectors.NewDetectLooper(srv.ctx, model)
-			if err != nil {
-				logger.Warnf("create detect looper for heapster %s error: %v", model.ID, err)
-				continue
-			}
-			oldModel, ok := srv.loopers[model.ID]
-			if ok {
-				oldModel.Stop()
-			}
-			looper.Run()
-			srv.loopers[model.ID] = looper
-		}
+		srv.loadAdded(added)
+		srv.loadModified(modified)
+		srv.loadDeteted(deleted)
+
 		logger.Infof("heapster reloaded")
 		oldSet = newSet
+	}
+}
+
+func (srv *HealthySrv) installHeapster(looper detectors.DetectLooper, alert alerts.Alert, model models.Heapster) {
+	looper.Run()
+	alert.TurnOn()
+	srv.alerts[model.ID] = alert
+	srv.loopers[model.ID] = looper
+}
+
+func (srv *HealthySrv) uninstallHeapster(model models.Heapster) {
+	alert, ok := srv.alerts[model.ID]
+	if ok {
+		alert.TurnOn()
+		delete(srv.alerts, model.ID)
+	}
+	looper, ok := srv.loopers[model.ID]
+	if ok {
+		looper.Stop()
+		delete(srv.loopers, model.ID)
+	}
+}
+
+func (srv *HealthySrv) loadAdded(keys models.HeapsterSetKeys) {
+	logger := middlewares.GetLogger(srv.ctx)
+	entry := logger.WithField("HealthyServer", "LoadAdded")
+	entry.Infof("added %d heapster", len(keys))
+
+	for _, k := range keys {
+		model := models.Heapster{
+			ID: models.SerialNumber(k),
+		}
+		// 模型信息
+		if err := model.Fill(srv.ctx); err != nil {
+			entry.Warnf("load heapster %s error: %v", k, err)
+			continue
+		}
+		// 创建新的
+		looper, err := detectors.NewDetectLooper(srv.ctx, model)
+		if err != nil {
+			entry.Warnf("create looper for heapster %s error: %v", model.ID, err)
+			continue
+		}
+		alert, err := alerts.NewAlert(srv.ctx, model)
+		if err != nil {
+			entry.Warnf("create alert for heapster %s error: %v", model.ID, err)
+			continue
+		}
+		srv.installHeapster(looper, alert, model)
+	}
+}
+
+func (srv *HealthySrv) loadModified(keys models.HeapsterSetKeys) {
+	logger := middlewares.GetLogger(srv.ctx)
+	entry := logger.WithField("HealthyServer", "LoadModified")
+	entry.Infof("modified %d heapster", len(keys))
+
+	for _, k := range keys {
+		model := models.Heapster{
+			ID: models.SerialNumber(k),
+		}
+		// 模型信息
+		if err := model.Fill(srv.ctx); err != nil {
+			entry.Warnf("load heapster %s error: %v", k, err)
+			continue
+		}
+		// 创建新的
+		looper, err := detectors.NewDetectLooper(srv.ctx, model)
+		if err != nil {
+			entry.Warnf("create looper for heapster %s error: %v", model.ID, err)
+			continue
+		}
+		alert, err := alerts.NewAlert(srv.ctx, model)
+		if err != nil {
+			entry.Warnf("create alert for heapster %s error: %v", model.ID, err)
+			continue
+		}
+		srv.uninstallHeapster(model)
+		srv.installHeapster(looper, alert, model)
+	}
+}
+
+func (srv *HealthySrv) loadDeteted(keys models.HeapsterSetKeys) {
+	logger := middlewares.GetLogger(srv.ctx)
+	entry := logger.WithField("HealthyServer", "LoadDeleted")
+	entry.Infof("deleted %d heapster", len(keys))
+
+	for _, k := range keys {
+		model := models.Heapster{
+			ID: models.SerialNumber(k),
+		}
+		srv.uninstallHeapster(model)
 	}
 }
 
@@ -138,25 +217,39 @@ func (srv *HealthySrv) Stop() {
 	<-srv.done
 
 	// 停止looper
-	logger.Infof("stopping all detect looper")
+	logger.Infof("stopping all looper and alert")
 	var wg = sync.WaitGroup{}
 
 	for _, looper := range srv.loopers {
 		wg.Add(1)
+
 		go func(looper detectors.DetectLooper) {
 			defer wg.Done()
+			looper.Stop()
 		}(looper)
 	}
-	wg.Wait()
+	for _, alert := range srv.alerts {
+		wg.Add(1)
+		go func(alert alerts.Alert) {
+			defer wg.Done()
+			alert.TurnOff()
+		}(alert)
+	}
 
+	wg.Wait()
 	logger.Infof("healthy server stop")
 }
 
 // 服务内部初始化
 func (srv *HealthySrv) init() {
+	var err error
+
 	srv.ctx = middlewares.WithLogger(context.Background(), srv.LogLevel, os.Stdout)
 	srv.ctx = middlewares.WithRedisConn(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
 	srv.ctx = middlewares.WithRateLimiter(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
-
+	srv.ctx, err = middlewares.WithInfluxDB(srv.ctx, srv.InfluxURL, srv.InfluxUser, srv.InfluxPasswd)
+	if err != nil {
+		panic(err)
+	}
 	srv.ctx, srv.cancel = context.WithCancel(srv.ctx)
 }

@@ -14,10 +14,17 @@ func TestHealthyAPISrv(t *testing.T) {
         "input": [
            {  
                "type": "gamehealthyapisrv",
+
 			   "host": "0.0.0.0:5000",
+
                "redis_host": "localhost:6379",
                "redis_password": "",
-               "redis_db": 9,
+               "redis_db": 0,
+
+			   "influx_url": "http://localhost:8086",
+               "influx_user": "",
+               "influx_passwd": "",
+			   
                "log_level": 5,
 			   "accesskeys": [
 					"vB9zXv6H0Pkzb",

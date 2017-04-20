@@ -2,6 +2,7 @@
     {
         "id": "testsms1",
         "type": "sms",
+        "name": "测试维护部门1",
         "config": {
             "type": "unicom",
             "sp": "103905",
@@ -13,8 +14,8 @@
         }
     },
     {
-        "id": "testsms2",
         "type": "sms",
+        "name": "测试维护部门2",
         "config": {
             "type": "unicom",
             "sp": "103905",

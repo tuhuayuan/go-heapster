@@ -38,11 +38,11 @@ func TestReportSave(t *testing.T) {
 	assert.NoError(t, rps.Save(ctx))
 }
 
-func TestFetchReports(t *testing.T) {
+func TestFetchErrorReports(t *testing.T) {
 	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
 	assert.NoError(t, err)
 
-	rps, err := FetchReports(ctx, LabelValue("testreport1"), 100*time.Minute)
+	rps, err := FetchErrorReports(ctx, LabelValue("testreport1"), 100*time.Minute)
 	assert.NoError(t, err)
 	fmt.Println(rps)
 }

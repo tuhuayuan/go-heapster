@@ -1,9 +1,8 @@
 [
     {
-        "id": "sample_heapster_id",
-        "name": "sample_heapster",
-        "type": "http",
-        "port": 5050,
+        "name": "游戏服务例子",
+        "type": "tcp",
+        "port": 10000,
         "accept_code": [
             400
         ],
@@ -11,13 +10,12 @@
         "location": "/healthz",
         "timeout": 3,
         "interval": 5,
-        "healthy_threshold": 3,
-        "unhealthy_threshold": 3,
+        "threshold": 3,
         "groups": [
-            "test_group"
+            "wrFdvfohftMp"
         ],
         "notifiers": [
-            "test_notifiers"
+            "udYQFepizIrX"
         ]
     }
 ]

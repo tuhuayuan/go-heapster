@@ -26,6 +26,11 @@ type HealthyAPISrv struct {
 	RedisPassword string `json:"redis_password"`
 	RedisDB       int    `json:"redis_db"`
 
+	// InfluxDB配置
+	InfluxURL    string `json:"influx_url"`
+	InfluxUser   string `json:"influx_user"`
+	InfluxPasswd string `json:"influx_passwd"`
+
 	// 通用配置
 	LogLevel   int      `json:"log_level"`
 	AccessKeys []string `json:"accesskeys"`
@@ -89,6 +94,7 @@ func (srv *HealthyAPISrv) init() {
 	srv.ctx = middlewares.WithLogger(srv.ctx, srv.LogLevel, os.Stdout)
 	httputil.Use(srv.ctx, middlewares.LoggerHandler(srv.LogLevel, os.Stdout))
 	httputil.Use(srv.ctx, middlewares.RedisConnHandler(srv.RedisHost, srv.RedisPassword, srv.RedisDB))
+	httputil.Use(srv.ctx, middlewares.InfluxDBHandler(srv.InfluxURL, srv.InfluxUser, srv.InfluxPasswd))
 
 	// api 版本
 	v1 := r.PathPrefix("/v1").Subrouter()
@@ -147,6 +153,10 @@ func (srv *HealthyAPISrv) init() {
 		httputil.HandleFunc(srv.ctx,
 			middlewares.BindBody(&handlers.FetchHeapsterReq{}),
 			handlers.FetchHeapsterHandler)).Methods("GET")
+	v1.HandleFunc("/gamehealthy/heapster/status",
+		httputil.HandleFunc(srv.ctx,
+			middlewares.BindBody(&handlers.FetchHeapsterStatusReq{}),
+			handlers.FetchHeapsterStatusHandler)).Methods("GET")
 
 	// report
 	v1.HandleFunc("/gamehealthy/report",

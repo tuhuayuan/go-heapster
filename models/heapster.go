@@ -4,11 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 	"zonst/qipai/gamehealthysrv/middlewares"
-
-	"reflect"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -84,6 +83,12 @@ type Heapster struct {
 	// TODO: for https
 }
 
+// HeapsterStatusSet 状态集
+type HeapsterStatusSet struct {
+	ID     SerialNumber  `json:"id"`
+	Status HealthyStatus `json:"status"`
+}
+
 // Heapsters 列表
 type Heapsters []Heapster
 
@@ -97,25 +102,24 @@ type HeapsterSetKeys []HeapsterSetKey
 type HeapsterSet map[HeapsterSetKey]Heapster
 
 // Diff 计算两个集合的差集
-func (oldset HeapsterSet) Diff(newset HeapsterSet) HeapsterSetKeys {
-	var (
-		diffkeys HeapsterSetKeys
-	)
-	// 找到被删除或者被修改了
+func (newset HeapsterSet) Diff(oldset HeapsterSet) (added HeapsterSetKeys, modified HeapsterSetKeys, deleted HeapsterSetKeys) {
 	for key, oldHeapster := range oldset {
 		newHeapster, ok := newset[key]
-		if !ok || !reflect.DeepEqual(newHeapster, oldHeapster) {
-			diffkeys = append(diffkeys, key)
-			continue
+		if !ok {
+			// 删除了
+			deleted = append(deleted, key)
+		} else if !reflect.DeepEqual(newHeapster, oldHeapster) {
+			// 修改了
+			modified = append(modified, key)
 		}
 	}
 	// 找到新添加的
 	for key := range newset {
 		if _, ok := oldset[key]; !ok {
-			diffkeys = append(diffkeys, key)
+			added = append(added, key)
 		}
 	}
-	return diffkeys
+	return
 }
 
 // Validate 验证
@@ -189,6 +193,30 @@ func (hst *Heapster) GetApplyNotifiers(ctx context.Context) (HeapsterNotifiers, 
 		ret = append(ret, model)
 	}
 	return ret, nil
+}
+
+// FetchHeapsterStatus 批量获取状态
+func FetchHeapsterStatus(ctx context.Context) ([]HeapsterStatusSet, error) {
+	var statusList []HeapsterStatusSet
+
+	conn := middlewares.GetRedisConn(ctx)
+	defer conn.Close()
+
+	rawKeys, err := redis.Strings(conn.Do("KEYS", "gamehealthy_heapster_*"))
+	if err != nil {
+		return nil, err
+	}
+	for _, rawKey := range rawKeys {
+		key := strings.TrimPrefix(string(rawKey), "gamehealthy_heapster_")
+		heapster := &Heapster{
+			ID: SerialNumber(key),
+		}
+		statusList = append(statusList, HeapsterStatusSet{
+			ID:     heapster.ID,
+			Status: heapster.GetStatus(ctx),
+		})
+	}
+	return statusList, nil
 }
 
 // FetchHeapsters 全部加载

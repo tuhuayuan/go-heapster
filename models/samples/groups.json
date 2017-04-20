@@ -8,7 +8,6 @@
         "status": "enable"
     },
     {
-        "id": "group2",
         "name": "监控组例子2",
         "endpoints": [
            "118.89.100.129",	

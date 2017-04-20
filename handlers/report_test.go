@@ -35,7 +35,7 @@ func TestFetchReports(t *testing.T) {
 		middlewares.BindBody(&FetchReportReq{}),
 		FetchReportHandler)
 
-	req := httptest.NewRequest("GET", "/?heapster=test_heapster", nil)
+	req := httptest.NewRequest("GET", "/?heapster=test_heapster&last=120", nil)
 	resp := httptest.NewRecorder()
 	handler(resp, req)
 	assert.Equal(t, 200, resp.Code)
