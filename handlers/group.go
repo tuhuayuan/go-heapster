@@ -70,6 +70,7 @@ func CreateGroupHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(model)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 7, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)
@@ -166,6 +167,7 @@ func FetchGroupHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(gs)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 3, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)

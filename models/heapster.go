@@ -197,7 +197,7 @@ func (hst *Heapster) GetApplyNotifiers(ctx context.Context) (HeapsterNotifiers, 
 
 // FetchHeapsterStatus 批量获取状态
 func FetchHeapsterStatus(ctx context.Context) ([]HeapsterStatusSet, error) {
-	var statusList []HeapsterStatusSet
+	statusList := make([]HeapsterStatusSet, 0, 256)
 
 	conn := middlewares.GetRedisConn(ctx)
 	defer conn.Close()

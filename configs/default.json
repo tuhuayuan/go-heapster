@@ -5,7 +5,7 @@
             
             "redis_host": "localhost:6379",
             "redis_password": "",
-            "redis_db": 0,
+            "redis_db": 11,
 
             "influx_url": "http://localhost:8086",
             "influx_user": "",
@@ -21,7 +21,7 @@
 
             "redis_host": "localhost:6379",
             "redis_password": "",
-            "redis_db": 0,
+            "redis_db": 11,
 
             "influx_url": "http://localhost:8086",
             "influx_user": "",

@@ -37,6 +37,7 @@ func FetchReportHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(rps)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 4, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)

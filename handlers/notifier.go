@@ -57,6 +57,7 @@ func CreateNotifierHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(model)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 4, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)
@@ -141,6 +142,7 @@ func FetchNotifierHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(nts)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 3, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)

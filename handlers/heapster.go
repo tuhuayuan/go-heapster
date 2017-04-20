@@ -81,6 +81,7 @@ func CreateHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(model)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 4, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)
@@ -176,6 +177,7 @@ func FetchHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(hs)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 3, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)
@@ -213,6 +215,7 @@ func FetchHeapsterStatusHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(statusList)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 2, err)
+		return
 	}
 	w.WriteHeader(200)
 	w.Write(data)
