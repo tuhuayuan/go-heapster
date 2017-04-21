@@ -56,7 +56,7 @@ def stop():
 
 
 def status():
-    run('sudo systemctl status ' + SERVICE_NAME)
+    run('sudo systemctl status -l ' + SERVICE_NAME)
 
 def log(lines=20, tail=True):
     argTail = '-f'

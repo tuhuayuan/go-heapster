@@ -54,8 +54,7 @@ func InfluxDBHandler(host string, user string, passwd string, db string) http.Ha
 	}
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-
-		ctx = context.WithValue(ctx, influxdbContextDBName, db)
+		ctx = httputil.WithValue(ctx, influxdbContextDBName, db)
 		ctx = httputil.WithValue(ctx, influxdbContextName, client)
 		httputil.Next(ctx)
 	}
