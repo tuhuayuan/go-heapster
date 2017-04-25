@@ -23,6 +23,12 @@ type CreateHeapsterReq struct {
 	Location   string        `json:"location,omitempty"`
 }
 
+// MuteHeapsterReq 静音请求
+type MuteHeapsterReq struct {
+	ID   string `json:"id" http:"id"`
+	Mute bool   `json:"mute" http:"mute"`
+}
+
 // DeleteHeapsterReq 删除请求
 type DeleteHeapsterReq struct {
 	ID string `json:"id" http:"id"`
@@ -215,6 +221,38 @@ func FetchHeapsterStatusHandler(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(statusList)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 2, err)
+		return
+	}
+	w.WriteHeader(200)
+	w.Write(data)
+}
+
+// MuteHeapsterHandler 静音
+func MuteHeapsterHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	body, err := middlewares.GetBindBody(ctx)
+	if err != nil {
+		middlewares.ErrorWrite(w, 200, 1, err)
+		return
+	}
+	req := body.(*MuteHeapsterReq)
+
+	model := &models.Heapster{
+		ID: models.SerialNumber(req.ID),
+	}
+	if err := model.Fill(ctx); err != nil {
+		middlewares.ErrorWrite(w, 200, 2, err)
+		return
+	}
+
+	model.Mute = req.Mute
+	if err := model.Save(ctx); err != nil {
+		middlewares.ErrorWrite(w, 200, 3, err)
+		return
+	}
+	data, err := json.Marshal(model)
+	if err != nil {
+		middlewares.ErrorWrite(w, 200, 4, err)
 		return
 	}
 	w.WriteHeader(200)

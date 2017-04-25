@@ -25,6 +25,7 @@ func NewAlert(ctx context.Context, model models.Heapster) (Alert, error) {
 	al := &defaultAlert{
 		model: model,
 		done:  make(chan struct{}),
+		mute:  model.Mute,
 	}
 	al.ctx, al.cancel = context.WithCancel(ctx)
 	// 创建notifier

@@ -158,6 +158,10 @@ func (srv *HealthyAPISrv) init() {
 		httputil.HandleFunc(srv.ctx,
 			middlewares.BindBody(&handlers.FetchHeapsterStatusReq{}),
 			handlers.FetchHeapsterStatusHandler)).Methods("GET")
+	v1.HandleFunc("/gamehealthy/heapster/mute",
+		httputil.HandleFunc(srv.ctx,
+			middlewares.BindBody(&handlers.MuteHeapsterReq{}),
+			handlers.MuteHeapsterHandler)).Methods("POST")
 
 	// report
 	v1.HandleFunc("/gamehealthy/report",

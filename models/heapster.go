@@ -73,8 +73,10 @@ type Heapster struct {
 	Threshold int           `json:"threshold"`
 	Groups    []string      `json:"groups"`
 	Notifiers []string      `json:"notifiers"`
+	Mute      bool          `json:"mute"`
 	Version   int           `json:"version,omitempty"`
 	Status    HealthyStatus `json:"status,omitempty"`
+
 	// for http
 	AcceptCode []int  `json:"accept_code,omitempty"`
 	Host       string `json:"host,omitempty"`

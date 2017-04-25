@@ -11,6 +11,8 @@ import (
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
 
+	"net/url"
+
 	"github.com/stretchr/testify/assert"
 )
 
@@ -102,6 +104,26 @@ func TestFetchHeapster(t *testing.T) {
 		FetchHeapsterHandler)
 
 	req := httptest.NewRequest("GET", "/", nil)
+	resp := httptest.NewRecorder()
+	handler(resp, req)
+	assert.Equal(t, 200, resp.Code)
+	body, _ := ioutil.ReadAll(resp.Body)
+	fmt.Println(string(body))
+}
+
+func TestMuteHeapster(t *testing.T) {
+	ctx := httputil.WithHTTPContext(nil)
+	httputil.Use(ctx, middlewares.RedisConnHandler("0.0.0.0:6379", "", 9))
+	handler := httputil.HandleFunc(ctx,
+		middlewares.BindBody(&MuteHeapsterReq{}),
+		MuteHeapsterHandler)
+
+	data := make(url.Values)
+	data.Add("id", heapsterTestID)
+	data.Add("mute", "1")
+	fmt.Println(data.Encode())
+	req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(data.Encode())))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	resp := httptest.NewRecorder()
 	handler(resp, req)
 	assert.Equal(t, 200, resp.Code)

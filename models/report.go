@@ -95,7 +95,7 @@ func FetchErrorReports(ctx context.Context, reportFor LabelValue, last time.Dura
 	defer client.Close()
 
 	req := influxdb.NewQueryWithParameters(
-		"SELECT success FROM report WHERE time>=$last and heapster_id=$heapster and success <= 0 group by report_target",
+		"SELECT sum(success) FROM report WHERE time>=$last and heapster_id=$heapster and success <= 0 group by report_target",
 		middlewares.GetInfluxDBName(ctx),
 		"RFC3339",
 		map[string]interface{}{
@@ -116,7 +116,7 @@ func FetchErrorReports(ctx context.Context, reportFor LabelValue, last time.Dura
 			}
 			rp.Labels[ReportNameTarget] = LabelValue(row.Tags["report_target"])
 			rp.Labels[ReportNameTimestamp] = LabelValue(val[0].(json.Number))
-			rp.Labels[ReportNameResult] = "error"
+			rp.Labels[ReportNameSuccess] = LabelValue(val[1].(json.Number))
 
 			reports = append(reports, rp)
 		}
