@@ -3,6 +3,7 @@ package notifiers
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
@@ -69,12 +70,18 @@ func (sms *smsNotifier) Send(ctx context.Context, reports models.Reports) error 
 		hp      *models.Heapster
 		limiter = middlewares.GetRateLimiter(ctx)
 		logger  = middlewares.GetLogger(ctx)
+		target  string
 	)
 
 	for _, rp := range reports {
 		if err := rp.Validate(); err != nil {
 			logger.Warnf("report ignored %v", err)
+			continue
 		}
+		if !strings.HasPrefix(string(rp.Labels[models.ReportNameSuccess]), "-") {
+			continue
+		}
+		target = string(rp.Labels[models.ReportNameTarget])
 		hp = &models.Heapster{
 			ID: models.SerialNumber(string(rp.Labels[models.ReportNameFor])),
 		}
@@ -94,7 +101,7 @@ func (sms *smsNotifier) Send(ctx context.Context, reports models.Reports) error 
 	}
 	tpl := fmt.Sprintf("%s提醒：%s需要%s请查阅%s",
 		"监控",
-		"（"+hp.Name+"）的实例出现异常",
+		"("+hp.Name+")中的("+target+")实例出现异常",
 		"及时处理",
 		"监控报告")
 	sendCtx, cancel := context.WithTimeout(ctx, 5*time.Second)

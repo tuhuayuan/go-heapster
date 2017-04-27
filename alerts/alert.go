@@ -76,8 +76,8 @@ func (al *defaultAlert) TurnOn() error {
 			al.running = false
 		}()
 		// 计算采样间隔，放大一倍
-		threshold := float64(al.model.Threshold) * 2
-		sampleInterval := time.Duration(threshold*2) * al.model.Interval
+		threshold := float64(al.model.Threshold)
+		sampleInterval := time.Duration(threshold) * al.model.Interval
 		// 警报器运行间隔固定
 		ticker := time.NewTicker(sampleInterval)
 		defer ticker.Stop()
@@ -89,7 +89,6 @@ func (al *defaultAlert) TurnOn() error {
 				return
 			case <-ticker.C:
 			}
-
 			// 查询统计报告
 			rps, err := models.FetchReportsAggregation(al.ctx, models.LabelValue(al.model.ID), sampleInterval)
 			if err != nil || len(rps) == 0 {
@@ -98,38 +97,40 @@ func (al *defaultAlert) TurnOn() error {
 				}
 				continue
 			}
-
+			curStatus := models.HealthyStatusGreen
 			for _, rp := range rps {
 				success, err := strconv.ParseFloat(string(rp.Labels[models.ReportNameSuccess]), 64)
 				if err != nil {
+					// 跳过这个报告
 					continue
 				}
 				if success < 0 && success <= threshold {
 					// RED
-					if err := al.model.SetStatus(al.ctx, models.HealthyStatusRed); err != nil {
-						logger.Warnf("healthy status change pass. %v", err)
-					}
-					// 发通知
-					if !al.mute {
-						for _, nt := range al.notifiers {
-							if err := nt.Send(al.ctx, rps); err != nil {
-								logger.Warnf("send report error %v", err)
-							}
-						}
-					}
+					curStatus = models.HealthyStatusRed
 					break
 				} else if success >= 0 && success >= threshold {
 					// GREEN
-					if err := al.model.SetStatus(al.ctx, models.HealthyStatusGreen); err != nil {
-						logger.Warnf("healthy status change pass. %v", err)
-					}
-					break
 				} else {
 					// YELLOW
-					if err := al.model.SetStatus(al.ctx, models.HealthyStatusYelow); err != nil {
-						logger.Warnf("healthy status change pass. %v", err)
+					curStatus = models.HealthyStatusYelow
+				}
+			}
+			if curStatus == models.HealthyStatusRed {
+				logger.Warnf("heapster %v turn to red", al.model.ID)
+				if err := al.model.SetStatus(al.ctx, models.HealthyStatusRed); err != nil {
+					logger.Warnf("healthy status change pass. %v", err)
+				}
+				// 发通知
+				if !al.mute {
+					for _, nt := range al.notifiers {
+						if err := nt.Send(al.ctx, rps); err != nil {
+							logger.Warnf("send report error %v", err)
+						}
 					}
-					break
+				}
+			} else {
+				if err := al.model.SetStatus(al.ctx, curStatus); err != nil {
+					logger.Warnf("healthy status %v change pass. %v", curStatus, err)
 				}
 			}
 		}

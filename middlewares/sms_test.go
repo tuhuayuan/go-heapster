@@ -22,16 +22,16 @@ func TestUnicomSend(t *testing.T) {
 	}
 	p, err := CreateSMSProvider("unicom", config)
 	assert.NoError(t, err)
-	sid := p.SendMessage(context.Background(), "您的验证码为{123456}", []string{"13879156403"})
+	sid := p.SendMessage(context.Background(), "您的验证码为123456", []string{"13879156403"})
 	assert.Equal(t, 0, sid.Result)
 	fmt.Println(sid.SerialNumber)
 }
 
 func TestUnicomReceipts(t *testing.T) {
 	config := UnicomConfig{
-		SPCode:   "",
-		Username: "",
-		Password: "",
+		SPCode:   "103905",
+		Username: "zz_sj",
+		Password: "www.zonst.org",
 	}
 	p, err := CreateSMSProvider("unicom", config)
 	assert.NoError(t, err)
@@ -41,9 +41,9 @@ func TestUnicomReceipts(t *testing.T) {
 
 func TestSMSHelper(t *testing.T) {
 	config := UnicomConfig{
-		SPCode:   "",
-		Username: "",
-		Password: "",
+		SPCode:   "103905",
+		Username: "zz_sj",
+		Password: "www.zonst.org",
 	}
 	ctx := httputil.WithHTTPContext(nil)
 	handler := httputil.HandleFunc(ctx,
