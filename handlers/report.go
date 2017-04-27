@@ -25,7 +25,7 @@ func FetchReportHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	req := body.(*FetchReportReq)
 
-	rps, err := models.FetchErrorReports(ctx, models.LabelValue(req.HeaspterID), req.LastMinute*time.Minute)
+	rps, err := models.FetchReportsAggs(ctx, req.HeaspterID, req.LastMinute*time.Minute)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 2, err)
 		return

@@ -21,17 +21,15 @@ func TestHealthyAPISrv(t *testing.T) {
                "redis_password": "",
                "redis_db": 0,
 
-			   "influx_url": "http://localhost:8086",
-               "influx_user": "",
-               "influx_passwd": "",
-			   
+			   "elastic_urls": ["http://10.0.10.46:9200"],
+				
                "log_level": 5,
 			   "accesskeys": [
 					"vB9zXv6H0Pkzb",
 					"OnamYpBVSRZHd",
 
 					"ySZFbntnmLKBq",
-					"yn9oyzWzgtBFf"
+					"yn9oyzWzgtBFf" 
                ]
            }
         ]

@@ -3,11 +3,13 @@ package detectors
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"sync"
 	"time"
 
+	"github.com/Sirupsen/logrus"
+
+	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
 )
 
@@ -17,20 +19,20 @@ func init() {
 
 var tcpDetectorCreator detectorCreator = func(ctx context.Context, hp models.Heapster) (detector, error) {
 	dtr := &tcpDetector{
-		model: hp,
+		model:  hp,
+		logger: middlewares.GetLogger(ctx),
 	}
 	// 获取监控目标组
 	groups, err := hp.GetApplyGroups(ctx)
 	if err != nil {
 		return nil, err
 	}
-
 	for _, g := range groups {
 		eps := g.Endpoints.Unfold().Exclude(g.Excluded)
 		for _, ep := range eps {
 			addr, err := net.ResolveTCPAddr("tcp", fmt.Sprintf("%s:%d", string(ep), hp.Port))
 			if err != nil {
-				log.Printf("endpoint %v ignore by %v", ep, err)
+				dtr.logger.Warnf("tpc endpoint %v ignore by error %v", ep, err)
 				continue
 			}
 			dtr.address = append(dtr.address, addr)
@@ -40,71 +42,66 @@ var tcpDetectorCreator detectorCreator = func(ctx context.Context, hp models.Hea
 }
 
 type tcpDetector struct {
-	model models.Heapster
-
+	model   models.Heapster
+	logger  *logrus.Logger
 	wg      sync.WaitGroup
 	address []*net.TCPAddr
 }
 
-func (dtr *tcpDetector) plumb(ctx context.Context) (models.Reports, error) {
+func (dtr *tcpDetector) plumb(ctx context.Context) models.ProbeLogs {
 	// 最大并行
-	const pageSize = 255
+	const pageSize = 64
 	var (
-		reports  models.Reports
-		errs     int
-		canceled bool
-		total    = len(dtr.address)
-		pages    = int(total / pageSize)
+		total = len(dtr.address)
+		pages = int(total / pageSize)
 	)
+	// 按照单次并发计算容量
+	probeLogs := make(models.ProbeLogs, 0, pageSize)
 	for i := 0; i <= pages; i++ {
-		// 提前结束
 		select {
 		case <-ctx.Done():
-			canceled = true
-			break
+			// 结束
+			return probeLogs
 		default:
 		}
-		// 计算分页
+		// 计算分页起始结束偏移
 		start := i * pageSize
 		end := start + pageSize
 		if i == pages {
 			end = start + total%pageSize
 		}
-		// 并发访问
 		for _, addr := range dtr.address[start:end] {
-			dtr.wg.Add(1)
+			// 设置超时上下文
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
-
+			dtr.wg.Add(1)
+			// 启动goroutine
 			go func(addr *net.TCPAddr, ctx context.Context, cancel func()) {
 				defer dtr.wg.Done()
 				defer cancel()
+				// 准备报告
+				beginAt := time.Now()
+				probeLog := models.ProbeLog{
+					Heapster:  string(dtr.model.ID),
+					Target:    addr.String(),
+					Timestamp: beginAt,
+				}
+				// 测试连接
 				dialer := &net.Dialer{}
 				conn, err := dialer.DialContext(ctx, "tcp", addr.String())
+				probeLog.Elapsed = time.Now().Sub(beginAt)
 				if err != nil {
-					reports = append(reports, models.Report{
-						Labels: models.LabelSet{
-							models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-							models.ReportNameTarget: models.LabelValue(addr.String()),
-							models.ReportNameResult: models.LabelValue(err.Error()),
-						},
-					})
-					errs++
-					return
+					probeLog.Response = err.Error()
+					probeLog.Failed = 1
+				} else {
+					probeLog.Response = "ok"
+					probeLog.Success = 1
+					conn.Close()
 				}
-				conn.Close()
-				reports = append(reports, models.Report{
-					Labels: models.LabelSet{
-						models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-						models.ReportNameTarget: models.LabelValue(addr.String()),
-						models.ReportNameResult: models.LabelValue("ok"),
-					},
-				})
+				// 添加日志
+				probeLogs = append(probeLogs, probeLog)
 			}(addr, timeoutCtx, cancel)
 		}
 		dtr.wg.Wait()
 	}
-	if errs > 0 || canceled {
-		return reports, fmt.Errorf("found %d errors, canceled %v", errs, canceled)
-	}
-	return reports, nil
+	return probeLogs
 }

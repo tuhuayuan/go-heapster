@@ -1,6 +1,10 @@
-hash: b35b9c5a360fef128094e1b6597be800e251aac9c8dc6badd867fd7a807cfd81
-updated: 2017-04-18T17:39:17.065314597+08:00
+hash: a75ca76bafc354c53b7c3a9af4980bd0211d19bc694b3a4e1cc75b441ebef594
+updated: 2017-04-26T17:54:49.264451374+08:00
 imports:
+- name: github.com/araddon/gou
+  version: 0ab1e8f997e35d27da012072dc531fcc0204da5a
+- name: github.com/bitly/go-hostpool
+  version: c32c3660406ef1ea14936cc9282e174fe8508c42
 - name: github.com/codegangsta/inject
   version: 33e0aa1cb7c019ccc3fbe049a8262a6403d30504
 - name: github.com/coreos/etcd
@@ -21,9 +25,17 @@ imports:
 - name: github.com/gorilla/mux
   version: 599cba5e7b6137d46ddf58fb1765f5d928e69604
 - name: github.com/influxdata/influxdb
-  version: 1bcf3ae74c6b9c4897dab68d513d056277eb24f7
+  version: 74aa2aa9ae830cd11b8e975e85bb60e61d8d1f21
   subpackages:
   - client/v2
+  - models
+  - pkg/escape
+- name: github.com/lytics/logrus
+  version: 59cd2e4a569b4494d9196bef82f0784e467adac9
+- name: github.com/mattbaird/elastigo
+  version: 2fe47fd29e4b70353f852ede77a196830d2924ec
+  subpackages:
+  - lib
 - name: github.com/Sirupsen/logrus
   version: 0208149b40d863d2c1a2f8fe5753096a9cf2cc8b
 - name: github.com/ugorji/go
@@ -43,13 +55,15 @@ imports:
   subpackages:
   - unix
 - name: golang.org/x/text
-  version: f4b4367115ec2de254587813edaa901bc1c723a8
+  version: a9a820217f98f7c8a207ec1e45a874e1fe12c478
   subpackages:
   - encoding
   - encoding/internal
   - encoding/internal/identifier
   - encoding/simplifiedchinese
   - transform
+- name: gopkg.in/olivere/elastic.v5
+  version: d27041682ec44beff97dd840a05cc5dd225ccf66
 - name: zonst/qipai-golang-libs/httputil
   version: cfb5a39b079c28c2c8e3f6b3fc1be744efc26e99
   repo: http://git.xq5.com:/qipai-golang-libs/httputil.git
@@ -65,7 +79,7 @@ imports:
   - utils
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 04cdfd42973bb9c8589fd6a731800cf222fde1a9
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib

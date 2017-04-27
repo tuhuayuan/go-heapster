@@ -13,22 +13,20 @@ import (
 )
 
 func TestDefaultAlert(t *testing.T) {
-	var (
-		hp = models.Heapster{
-			ID:       "testreport1",
-			Name:     "test_manager",
-			Type:     models.CheckType("test"),
-			Port:     5200,
-			Timeout:  2 * time.Second,
-			Interval: 3 * time.Second,
-			Healthy:  3,
-		}
-	)
-
-	ctx, err := middlewares.WithInfluxDB(context.Background(), "http://localhost:8086", "", "")
-	assert.NoError(t, err)
+	hp := models.Heapster{
+		ID:        "testreport1",
+		Name:      "test_manager",
+		Type:      models.CheckType("test"),
+		Port:      5200,
+		Timeout:   2 * time.Second,
+		Interval:  3 * time.Second,
+		Threshold: 3,
+	}
+	ctx := middlewares.WithRedisConn(context.Background(), "localhost:6379", "", 1)
 	ctx = middlewares.WithLogger(ctx, 5, os.Stdout)
-	ctx = middlewares.WithRedisConn(ctx, "localhost:6379", "", 0)
+	ctx = middlewares.WithElasticConn(ctx, []string{"http://10.0.10.46:9200"}, "", "")
+
+	assert.NoError(t, hp.Save(ctx))
 
 	al, err := NewAlert(ctx, hp)
 	assert.NoError(t, err)

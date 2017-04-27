@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 	"zonst/qipai/gamehealthysrv/middlewares"
@@ -110,7 +109,7 @@ func (newset HeapsterSet) Diff(oldset HeapsterSet) (added HeapsterSetKeys, modif
 		if !ok {
 			// 删除了
 			deleted = append(deleted, key)
-		} else if !reflect.DeepEqual(newHeapster, oldHeapster) {
+		} else if newHeapster.Version > oldHeapster.Version {
 			// 修改了
 			modified = append(modified, key)
 		}

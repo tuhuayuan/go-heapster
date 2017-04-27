@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"testing"
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
@@ -39,7 +40,10 @@ func WithHTTPTarget(ctx context.Context) context.Context {
 }
 
 func TestHTTPPlumb(t *testing.T) {
-	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
+	ctx := middlewares.WithRedisConn(context.Background(), "localhost:6379", "", 1)
+	ctx = middlewares.WithLogger(ctx, 5, os.Stdout)
+	ctx = middlewares.WithElasticConn(ctx, []string{"http://10.0.10.46:9200"}, "", "")
+
 	g1 := models.Group{
 		ID:   "test_local",
 		Name: "test_local",
@@ -81,7 +85,10 @@ func TestHTTPPlumb(t *testing.T) {
 }
 
 func TestHttpWithHost(t *testing.T) {
-	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
+	ctx := middlewares.WithRedisConn(context.Background(), "localhost:6379", "", 1)
+	ctx = middlewares.WithLogger(ctx, 5, os.Stdout)
+	ctx = middlewares.WithElasticConn(ctx, []string{"http://10.0.10.46:9200"}, "", "")
+
 	g1 := models.Group{
 		ID:   "test_local1",
 		Name: "test_local",

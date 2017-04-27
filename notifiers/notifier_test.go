@@ -19,7 +19,7 @@ var testNotifierCreator = func(model models.HeapsterNotifier) (Notifier, error) 
 	return &testNotifier{}, nil
 }
 
-func (tn *testNotifier) Send(ctx context.Context, reports models.Reports) error {
+func (tn *testNotifier) Send(ctx context.Context, reports models.Report) error {
 	return nil
 }
 
@@ -28,5 +28,5 @@ func TestDefaultManager(t *testing.T) {
 		Type: "test",
 	})
 	assert.NoError(t, err)
-	assert.NoError(t, n.Send(context.Background(), models.Reports{}))
+	assert.NoError(t, n.Send(context.Background(), models.Report{}))
 }
