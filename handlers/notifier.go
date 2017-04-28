@@ -11,7 +11,7 @@ import (
 type CreateNotifierReq struct {
 	Type   string                 `json:"type"`
 	Name   string                 `json:"name"`
-	Config map[string]interface{} `json:"config"`
+	Config map[string]interface{} `json:"Config"`
 }
 
 // DeleteNotifierReq 删除请求

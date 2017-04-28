@@ -324,7 +324,7 @@ type HeapsterNotifier struct {
 	Name    string                 `json:"name"`
 	Type    string                 `json:"type"`
 	Version int                    `json:"version,omitempty"`
-	Config  map[string]interface{} `json:"config"`
+	Config  map[string]interface{} `json:"Config"`
 }
 
 // HeapsterNotifiers 列表
