@@ -22,11 +22,8 @@ type HealthySrv struct {
 	RedisPassword string `json:"redis_password"`
 	RedisDB       int    `json:"redis_db"`
 
-	// InfluxDB配置
-	InfluxURL    string `json:"influx_url"`
-	InfluxUser   string `json:"influx_user"`
-	InfluxPasswd string `json:"influx_passwd"`
-	InfluxDB     string `json:"influx_db"`
+	// Elastic配置
+	ElasticURLs []string `json:"elastic_urls"`
 
 	// 联通短信配置
 	UnicomSP       string `json:"unicom_sp"`
@@ -140,7 +137,7 @@ func (srv *HealthySrv) uninstallHeapster(model models.Heapster) {
 func (srv *HealthySrv) loadAdded(keys models.HeapsterSetKeys) {
 	logger := middlewares.GetLogger(srv.ctx)
 	entry := logger.WithField("HealthyServer", "LoadAdded")
-	entry.Infof("added %d heapster", len(keys))
+	entry.Infof("added %d heapster: %v", len(keys), keys)
 
 	for _, k := range keys {
 		model := models.Heapster{
@@ -169,7 +166,7 @@ func (srv *HealthySrv) loadAdded(keys models.HeapsterSetKeys) {
 func (srv *HealthySrv) loadModified(keys models.HeapsterSetKeys) {
 	logger := middlewares.GetLogger(srv.ctx)
 	entry := logger.WithField("HealthyServer", "LoadModified")
-	entry.Infof("modified %d heapster", len(keys))
+	entry.Infof("modified %d heapster: %v", len(keys), keys)
 
 	for _, k := range keys {
 		model := models.Heapster{
@@ -199,7 +196,7 @@ func (srv *HealthySrv) loadModified(keys models.HeapsterSetKeys) {
 func (srv *HealthySrv) loadDeteted(keys models.HeapsterSetKeys) {
 	logger := middlewares.GetLogger(srv.ctx)
 	entry := logger.WithField("HealthyServer", "LoadDeleted")
-	entry.Infof("deleted %d heapster", len(keys))
+	entry.Infof("deleted %d heapster: %v", len(keys), keys)
 
 	for _, k := range keys {
 		model := models.Heapster{
@@ -243,14 +240,9 @@ func (srv *HealthySrv) Stop() {
 
 // 服务内部初始化
 func (srv *HealthySrv) init() {
-	var err error
-
 	srv.ctx = middlewares.WithLogger(context.Background(), srv.LogLevel, os.Stdout)
 	srv.ctx = middlewares.WithRedisConn(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
 	srv.ctx = middlewares.WithRateLimiter(srv.ctx, srv.RedisHost, srv.RedisPassword, srv.RedisDB)
-	srv.ctx, err = middlewares.WithInfluxDB(srv.ctx, srv.InfluxURL, srv.InfluxUser, srv.InfluxPasswd, srv.InfluxDB)
-	if err != nil {
-		panic(err)
-	}
+	srv.ctx = middlewares.WithElasticConn(srv.ctx, srv.ElasticURLs, "", "")
 	srv.ctx, srv.cancel = context.WithCancel(srv.ctx)
 }

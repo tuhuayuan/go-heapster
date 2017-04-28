@@ -3,8 +3,8 @@ package notifiers
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
+
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
 )
@@ -65,53 +65,38 @@ type smsNotifier struct {
 }
 
 // Send 短信不能发那么多字, 只能发一个大概的描述
-func (sms *smsNotifier) Send(ctx context.Context, reports models.Reports) error {
+func (sms *smsNotifier) Send(ctx context.Context, report models.Report) error {
 	var (
-		hp      *models.Heapster
 		limiter = middlewares.GetRateLimiter(ctx)
 		logger  = middlewares.GetLogger(ctx)
-		target  string
 	)
 
-	for _, rp := range reports {
-		if err := rp.Validate(); err != nil {
-			logger.Warnf("report ignored %v", err)
-			continue
-		}
-		if !strings.HasPrefix(string(rp.Labels[models.ReportNameSuccess]), "-") {
-			continue
-		}
-		target = string(rp.Labels[models.ReportNameTarget])
-		hp = &models.Heapster{
-			ID: models.SerialNumber(string(rp.Labels[models.ReportNameFor])),
-		}
-		if err := hp.Fill(ctx); err != nil {
-			logger.Warnf("report ignored %v", err)
-		}
-		break
+	// 获取heapster信息
+	hp := &models.Heapster{
+		ID: models.SerialNumber(report.Heapster),
 	}
-	if hp == nil {
+	if err := hp.Fill(ctx); err != nil {
 		return fmt.Errorf("report missing heapster")
 	}
+	// 流量控制
 	if limiter.TryAccept([]string{string(hp.ID)}, 5*time.Minute, 1) {
 		return fmt.Errorf("rate controll by heapster")
 	}
 	if limiter.TryAccept(sms.numbers, 5*time.Minute, 1) {
 		return fmt.Errorf("rate controll by phone")
 	}
+	// 构建消息
 	tpl := fmt.Sprintf("%s提醒：%s需要%s请查阅%s",
 		"监控",
-		"("+hp.Name+")中的("+target+")实例出现异常",
+		"("+hp.Name+")中的("+report.Target+")出现异常",
 		"及时处理",
 		"监控报告")
+	// 发送超时默认5秒
 	sendCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	go func() {
-		result := sms.provider.SendMessage(sendCtx, tpl, sms.numbers)
-		cancel()
-		if result.Result != 0 {
-			logger.Warnf("send sms error %s", result.Error())
-		}
-	}()
-
+	result := sms.provider.SendMessage(sendCtx, tpl, sms.numbers)
+	cancel()
+	if result.Result != 0 {
+		logger.Warnf("send sms error %s", result.Error())
+	}
 	return nil
 }

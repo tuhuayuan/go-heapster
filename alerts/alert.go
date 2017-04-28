@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"strconv"
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
 	"zonst/qipai/gamehealthysrv/notifiers"
@@ -67,18 +66,17 @@ func (al *defaultAlert) TurnOn() error {
 	al.running = true
 	al.mtx.Unlock()
 
+	// 启动监控循环
 	go func() {
 		defer close(al.done)
+		// 循环结束调整状态
 		defer func() {
-			// 设置looper状态
 			al.mtx.Lock()
 			defer al.mtx.Unlock()
 			al.running = false
 		}()
 		// 计算采样间隔
-		threshold := float64(al.model.Threshold)
 		sampleInterval := time.Duration(al.model.Threshold)*al.model.Interval + al.model.Interval
-		// 警报器运行间隔固定
 		ticker := time.NewTicker(sampleInterval)
 		defer ticker.Stop()
 		startTime := time.Now()
@@ -91,27 +89,23 @@ func (al *defaultAlert) TurnOn() error {
 			}
 			// 查询统计报告
 			nextStart := time.Now()
-			rps, err := models.FetchReportsAggregation(al.ctx, models.LabelValue(al.model.ID), startTime)
+			rps, err := models.FetchReportsAggs(al.ctx, string(al.model.ID), startTime)
 			startTime = nextStart
+			// 没有报告数据
 			if err != nil || len(rps) == 0 {
-				if err := al.model.SetStatus(al.ctx, models.HealthyStatusUnknown); err != nil {
-					logger.Warnf("healthy status change pass. %v", err)
-				}
+				al.model.SetStatus(al.ctx, models.HealthyStatusUnknown)
+				logger.Warnf("no report data for %s, %v", string(al.model.ID), err)
 				continue
 			}
 			curStatus := models.HealthyStatusGreen
-			for _, rp := range rps {
-				success, err := strconv.ParseFloat(string(rp.Labels[models.ReportNameSuccess]), 64)
-				if err != nil {
-					// 跳过这个报告
-					continue
-				}
-				fmt.Println(success, ";", threshold)
-				if success < 0 && success <= -threshold {
+			var rp models.Report
+			// 处理报告
+			for _, rp = range rps {
+				if rp.Faileds >= al.model.Threshold {
 					// RED
 					curStatus = models.HealthyStatusRed
 					break
-				} else if success >= 0 && success >= threshold {
+				} else if rp.Success >= al.model.Threshold {
 					// GREEN
 				} else {
 					// YELLOW
@@ -126,7 +120,7 @@ func (al *defaultAlert) TurnOn() error {
 				// 发通知
 				if !al.mute {
 					for _, nt := range al.notifiers {
-						if err := nt.Send(al.ctx, rps); err != nil {
+						if err := nt.Send(al.ctx, rp); err != nil {
 							logger.Warnf("send report error %v", err)
 						}
 					}
@@ -149,6 +143,5 @@ func (al *defaultAlert) TurnOff() {
 
 // Mute 设置是否静音
 func (al *defaultAlert) Mute(isMute bool) {
-	// TODO 应该把静音配置写到heapter模型里面
 	al.mute = isMute
 }

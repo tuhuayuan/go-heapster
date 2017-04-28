@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"net"
+	"os"
 	"time"
 )
 
@@ -44,7 +45,10 @@ func WithTCPTarget(ctx context.Context) context.Context {
 }
 
 func TestTCPPlumb(t *testing.T) {
-	ctx := middlewares.WithRedisConn(context.Background(), "0.0.0.0:6379", "", 1)
+	ctx := middlewares.WithRedisConn(context.Background(), "localhost:6379", "", 1)
+	ctx = middlewares.WithLogger(ctx, 5, os.Stdout)
+	ctx = middlewares.WithElasticConn(ctx, []string{"http://10.0.10.46:9200"}, "", "")
+
 	g1 := models.Group{
 		ID:   "test_group1",
 		Name: "test_local",

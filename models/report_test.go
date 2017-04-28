@@ -7,49 +7,36 @@ import (
 
 	"time"
 
+	"context"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestReportSave(t *testing.T) {
-	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "", "gamehealthy")
-	assert.NoError(t, err)
+	ctx := middlewares.WithElasticConn(context.Background(), []string{"http://10.0.10.46:9200"}, "", "")
 
-	rps := Reports{
-		Report{
-			Labels: LabelSet{
-				ReportNameFor:    LabelValue("testreport1"),
-				ReportNameTarget: LabelValue("http://localhost:5000"),
-				ReportNameResult: LabelValue(
-					fmt.Sprintf("http response code 404"),
-				),
-			},
+	rps := ProbeLogs{
+		ProbeLog{
+			Heapster: "test_heapster_model",
+			Target:   "10.0.10.46:10000",
+			Success:  1,
+			Response: "",
+			Elapsed:  1 * time.Millisecond,
 		},
-		Report{
-			Labels: LabelSet{
-				ReportNameFor:    LabelValue("testreport1"),
-				ReportNameTarget: LabelValue("http://localhost:5001"),
-				ReportNameResult: LabelValue(
-					"ok",
-				),
-			},
+		ProbeLog{
+			Heapster: "test_heapster_model",
+			Target:   "10.0.10.47:10000",
+			Failed:   1,
+			Response: "Connection refused",
+			Elapsed:  0,
 		},
 	}
 
 	assert.NoError(t, rps.Save(ctx))
 }
 
-func TestFetchErrorReports(t *testing.T) {
-	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "", "gamehealthy")
-	assert.NoError(t, err)
+func TestFetchReportsAggs(t *testing.T) {
+	ctx := middlewares.WithElasticConn(context.Background(), []string{"http://10.0.10.46:9200"}, "", "")
 
-	rps, err := FetchErrorReports(ctx, LabelValue("testreport1"), 100*time.Minute)
-	assert.NoError(t, err)
-	fmt.Println(rps)
-}
-
-func TestFetchReportsAggregation(t *testing.T) {
-	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "", "gamehealthy")
-	assert.NoError(t, err)
-
-	fmt.Println(FetchReportsAggregation(ctx, "testreport1", time.Now().Add(-100*time.Minute)))
+	fmt.Println(FetchReportsAggs(ctx, "test_heapster_model", 100*time.Minute))
 }

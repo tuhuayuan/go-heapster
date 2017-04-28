@@ -3,12 +3,14 @@ package detectors
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 	"time"
 
+	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
+
+	"github.com/Sirupsen/logrus"
 )
 
 func init() {
@@ -17,7 +19,8 @@ func init() {
 
 var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.Heapster) (detector, error) {
 	dtr := &httpDetector{
-		model: hp,
+		model:  hp,
+		logger: middlewares.GetLogger(ctx),
 	}
 	// 获取监控目标组
 	groups, err := hp.GetApplyGroups(ctx)
@@ -27,13 +30,13 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 	for _, g := range groups {
 		eps := g.Endpoints.Unfold().Exclude(g.Excluded)
 		for _, ep := range eps {
-			dtr.target = fmt.Sprintf("http://%s:%d", string(ep), hp.Port)
+			epURL := fmt.Sprintf("http://%s:%d", string(ep), hp.Port)
 			if hp.Location != "" {
-				dtr.target += hp.Location
+				epURL += hp.Location
 			}
-			req, err := http.NewRequest("GET", dtr.target, nil)
+			req, err := http.NewRequest("GET", epURL, nil)
 			if err != nil {
-				log.Printf("endpoint %v ignore by %v", ep, err)
+				dtr.logger.Warnf("endpoint %v ignore by error %v", ep, err)
 				continue
 			}
 			if hp.Host != "" {
@@ -46,82 +49,69 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 }
 
 type httpDetector struct {
-	model models.Heapster
-
+	model  models.Heapster
+	logger *logrus.Logger
 	wg     sync.WaitGroup
 	reqs   []*http.Request
-	target string
 }
 
-func (dtr *httpDetector) plumb(ctx context.Context) (models.Reports, error) {
+func (dtr *httpDetector) plumb(ctx context.Context) models.ProbeLogs {
 	// 最大并行
-	const pageSize = 255
+	const pageSize = 64
 	var (
-		reports  models.Reports
-		errs     int
-		canceled bool
-		total    = len(dtr.reqs)
-		pages    = int(total / pageSize)
+		total = len(dtr.reqs)
+		pages = int(total / pageSize)
 	)
+	// 按照单次并发计算容量
+	probeLogs := make(models.ProbeLogs, 0, pageSize)
 	for i := 0; i <= pages; i++ {
-		// 提前结束
 		select {
 		case <-ctx.Done():
-			canceled = true
-			break
+			// 结束
+			return probeLogs
 		default:
 		}
-		// 计算分页
+		// 计算分页起始结束偏移
 		start := i * pageSize
 		end := start + pageSize
 		if i == pages {
 			end = start + total%pageSize
 		}
 		for _, req := range dtr.reqs[start:end] {
+			// 设置超时上下文
 			timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
 			dtr.wg.Add(1)
+			// 启动goroutine
 			go func(req *http.Request, ctx context.Context, cancel func()) {
 				defer dtr.wg.Done()
 				defer cancel()
-
-				resp, err := http.DefaultClient.Do(req.WithContext(ctx))
-				if err != nil {
-					reports = append(reports, models.Report{
-						Labels: models.LabelSet{
-							models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-							models.ReportNameTarget: models.LabelValue(dtr.target),
-							models.ReportNameResult: models.LabelValue(err.Error()),
-						},
-					})
-					errs++
-				} else if !dtr.checkResponseCode(resp.StatusCode) {
-					reports = append(reports, models.Report{
-						Labels: models.LabelSet{
-							models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-							models.ReportNameTarget: models.LabelValue(dtr.target),
-							models.ReportNameResult: models.LabelValue(
-								fmt.Sprintf("http response code %d", resp.StatusCode),
-							),
-						},
-					})
-					errs++
-				} else {
-					reports = append(reports, models.Report{
-						Labels: models.LabelSet{
-							models.ReportNameFor:    models.LabelValue(dtr.model.ID),
-							models.ReportNameTarget: models.LabelValue(dtr.target),
-							models.ReportNameResult: "ok",
-						},
-					})
+				// 准备报告
+				beginAt := time.Now()
+				probeLog := models.ProbeLog{
+					Heapster:  string(dtr.model.ID),
+					Target:    req.URL.String(),
+					Timestamp: beginAt,
 				}
+				// 测试连接
+				resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+				probeLog.Elapsed = time.Now().Sub(beginAt)
+				if err != nil {
+					probeLog.Response = err.Error()
+					probeLog.Failed = 1
+				} else if !dtr.checkResponseCode(resp.StatusCode) {
+					probeLog.Response = fmt.Sprintf("http response code %d", resp.StatusCode)
+					probeLog.Failed = 1
+				} else {
+					probeLog.Response = "ok"
+					probeLog.Success = 1
+				}
+				// 添加日志
+				probeLogs = append(probeLogs, probeLog)
 			}(req, timeoutCtx, cancel)
 		}
 		dtr.wg.Wait()
 	}
-	if errs > 0 || canceled {
-		return reports, fmt.Errorf("found %d errors, canceled %v", errs, canceled)
-	}
-	return reports, nil
+	return probeLogs
 }
 
 func (dtr *httpDetector) checkResponseCode(c int) bool {

@@ -21,7 +21,7 @@ func registCreator(name string, creator detectorCreator) {
 
 // detector 探测器接口
 type detector interface {
-	plumb(ctx context.Context) (models.Reports, error)
+	plumb(ctx context.Context) models.ProbeLogs
 }
 
 // detector工厂方法
@@ -100,11 +100,11 @@ func (dl *defaultLooper) Run() error {
 			var (
 				timeoutCtx, cancel = context.WithTimeout(dl.ctx, time.Duration(dl.model.Timeout))
 			)
-			reports, _ := dl.worker.plumb(timeoutCtx)
+			pls := dl.worker.plumb(timeoutCtx)
 			cancel()
 			// 写入报告
-			if err := reports.Save(dl.ctx); err != nil {
-				logger.Warnf("pass report save %v", err)
+			if err := pls.Save(dl.ctx); err != nil {
+				logger.Warnf("pass probe log save err %v", err)
 			}
 			// 结束或者下一次循环开始时间到了
 			select {

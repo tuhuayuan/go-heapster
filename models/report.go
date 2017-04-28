@@ -2,161 +2,123 @@ package models
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
+	"log"
+	"os"
 	"time"
 
-	influxdb "github.com/influxdata/influxdb/client/v2"
-
 	"zonst/qipai/gamehealthysrv/middlewares"
+
+	elastic "gopkg.in/olivere/elastic.v5"
 )
 
-// 报告字段
-const (
-	ReportNameType      LabelName = "_report_type_"
-	ReportNameTarget    LabelName = "_report_target_"
-	ReportNameFor       LabelName = "_report_for_"
-	ReportNameResult    LabelName = "_report_result_"
-	ReportNameTimestamp LabelName = "_report_timestamp"
-	ReportNameSuccess   LabelName = "_report_success_"
-	ReportNameSubtitle  LabelName = "_report_subtitile_"
-)
-
-// Report 检测报告
+// Report 检测报告,用于API接口和Alert模块
 type Report struct {
-	Labels LabelSet `json:"labels"`
+	Heapster string        `json:"heapster"`
+	Target   string        `json:"target"`
+	Success  int           `json:"success"`
+	Faileds  int           `json:"faileds"`
+	MaxDelay time.Duration `json:"max_delay"`
+}
+
+func init() {
+	elastic.SetTraceLog(log.New(os.Stdout, "****** ", 5))
 }
 
 // Reports 报告列表
 type Reports []Report
 
+// ProbeLog 持久化文档结构，对应Elastic的gamehealthy-*模版
+type ProbeLog struct {
+	Timestamp time.Time     `json:"timestamp"`
+	Heapster  string        `json:"heapster"`
+	Target    string        `json:"target"`
+	Response  string        `json:"response"`
+	Elapsed   time.Duration `json:"elapsed"`
+	Success   int           `json:"success"`
+	Failed    int           `json:"failed"`
+}
+
+// ProbeLogs ProbeLog列表
+type ProbeLogs []ProbeLog
+
 // Validate 验证report必填字段
-func (rp Report) Validate() error {
-	if rp.Labels[ReportNameFor] == "" || !rp.Labels[ReportNameFor].IsValid() {
-		return fmt.Errorf("ReportNameFor field required")
+func (pl ProbeLog) Validate() error {
+	if pl.Heapster == "" {
+		return fmt.Errorf("Heapster field required")
 	}
-	if rp.Labels[ReportNameTarget] == "" || !rp.Labels[ReportNameTarget].IsValid() {
-		return fmt.Errorf("ReportNameTarget field required")
+	if pl.Target == "" {
+		return fmt.Errorf("Target field required")
 	}
 	return nil
 }
 
 // Save 保存报告
-func (rps Reports) Save(ctx context.Context) error {
-	client := middlewares.GetInfluxDB(ctx)
-	defer client.Close()
-
-	bp, err := influxdb.NewBatchPoints(influxdb.BatchPointsConfig{
-		Database:  middlewares.GetInfluxDBName(ctx),
-		Precision: "ns",
-	})
-	if err != nil {
-		return err
-	}
-
-	for _, rp := range rps {
-		if rp.Validate() != nil {
+func (pls ProbeLogs) Save(ctx context.Context) error {
+	conn := middlewares.GetElasticConn(ctx)
+	for _, doc := range pls {
+		if doc.Validate() != nil {
 			continue
 		}
-		tags := map[string]string{
-			"heapster_id":   string(rp.Labels[ReportNameFor]),
-			"report_target": string(rp.Labels[ReportNameTarget]),
-		}
-		fields := make(map[string]interface{}, 2)
-		if string(rp.Labels[ReportNameResult]) == "ok" {
-			fields["success"] = 1.0
-		} else {
-			fields["success"] = -1.0
-		}
+		doc.Timestamp = time.Now()
 
-		point, err := influxdb.NewPoint(
-			"report",
-			tags,
-			fields,
-			time.Now(),
-		)
+		_, err := conn.Index().
+			Index("<gamehealthy-{now/d}>").
+			Type("probelog").
+			BodyJson(doc).Do(ctx)
 		if err != nil {
-			continue
+			return fmt.Errorf("save report error %v", err)
 		}
-		bp.AddPoint(point)
-	}
-	err = client.Write(bp)
-	if err != nil {
-		return err
 	}
 	return nil
 }
 
-// FetchErrorReports 获取制定目标的报告
-func FetchErrorReports(ctx context.Context, reportFor LabelValue, last time.Duration) (Reports, error) {
-	var reports Reports
+// FetchReportsAggs 获取统计报告
+func FetchReportsAggs(ctx context.Context, heapster string, last time.Duration) (Reports, error) {
+	conn := middlewares.GetElasticConn(ctx)
+	// 查询条件
+	queryHeapster := elastic.NewTermQuery("heapster", heapster)
+	queryTimestamp := elastic.NewRangeQuery("timestamp").
+		Gte(time.Now().Add(-last).Format(time.RFC3339))
+	boolQuery := elastic.NewBoolQuery().Filter(queryHeapster, queryTimestamp)
+	// 聚集
+	aggsSuccess := elastic.NewSumAggregation().Field("success")
+	aggsFaileds := elastic.NewSumAggregation().Field("failed")
+	aggsElapsed := elastic.NewMaxAggregation().Field("elapsed")
+	aggsTarget := elastic.NewTermsAggregation().
+		Field("target").OrderByTermAsc().
+		SubAggregation("success", aggsSuccess).
+		SubAggregation("faileds", aggsFaileds).
+		SubAggregation("max_delay", aggsElapsed)
 
-	client := middlewares.GetInfluxDB(ctx)
-	defer client.Close()
-
-	req := influxdb.NewQueryWithParameters(
-		"SELECT sum(success) FROM report WHERE time>=$last and heapster_id=$heapster and success <= 0 group by report_target",
-		middlewares.GetInfluxDBName(ctx),
-		"RFC3339",
-		map[string]interface{}{
-			"last":     time.Now().Add(-last),
-			"heapster": string(reportFor),
-		})
-	resp, err := client.Query(req)
+	// 最多检索3天前的数据
+	result, err := conn.Search("gamehealthy-*").
+		Type("probelog").From(0).Size(1000).
+		Query(boolQuery).Aggregation("target", aggsTarget).
+		Do(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	for _, row := range resp.Results[0].Series {
-		for _, val := range row.Values {
+	reports := make(Reports, 0, 1024)
+	term, ok := result.Aggregations.Terms("target")
+	if ok {
+		for _, b := range term.Buckets {
 			rp := Report{
-				Labels: LabelSet{
-					ReportNameFor: reportFor,
-				},
+				Heapster: heapster,
+				Target:   b.Key.(string),
 			}
-			rp.Labels[ReportNameTarget] = LabelValue(row.Tags["report_target"])
-			rp.Labels[ReportNameTimestamp] = LabelValue(val[0].(json.Number))
-			rp.Labels[ReportNameSuccess] = LabelValue(val[1].(json.Number))
 
+			if success, ok := b.Sum("success"); ok {
+				rp.Success = int(*success.Value)
+			}
+			if faileds, ok := b.Sum("faileds"); ok {
+				rp.Faileds = int(*faileds.Value)
+			}
+			if maxDelay, ok := b.Sum("max_delay"); ok {
+				rp.MaxDelay = time.Duration(*maxDelay.Value)
+			}
 			reports = append(reports, rp)
 		}
-	}
-	return reports, nil
-}
-
-// FetchReportsAggregation 获取
-func FetchReportsAggregation(ctx context.Context, reportFor LabelValue, from time.Time) (Reports, error) {
-	var reports Reports
-
-	client := middlewares.GetInfluxDB(ctx)
-	defer client.Close()
-
-	req := influxdb.NewQueryWithParameters(
-		"SELECT SUM(success) AS success FROM report WHERE time>=$last and heapster_id=$heapster group by report_target",
-		middlewares.GetInfluxDBName(ctx),
-		"RFC3339",
-		map[string]interface{}{
-			"last":     from,
-			"heapster": string(reportFor),
-		})
-	resp, err := client.Query(req)
-	if err != nil {
-		return nil, err
-	}
-	for _, row := range resp.Results[0].Series {
-		rp := Report{
-			Labels: LabelSet{
-				ReportNameFor:    reportFor,
-				ReportNameTarget: LabelValue(row.Tags["report_target"]),
-			},
-		}
-		rp.Labels[ReportNameTimestamp] = LabelValue(row.Values[0][0].(json.Number))
-		success, ok := row.Values[0][1].(json.Number)
-		if !ok {
-			success = "0.0"
-		}
-		rp.Labels[ReportNameSuccess] = LabelValue(success)
-		reports = append(reports, rp)
 	}
 	return reports, nil
 }

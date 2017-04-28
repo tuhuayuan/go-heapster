@@ -20,7 +20,7 @@ func registCreator(name string, creator notifierCreator) {
 
 // Notifier 健康状态通知者接口
 type Notifier interface {
-	Send(ctx context.Context, report models.Reports) error
+	Send(ctx context.Context, report models.Report) error
 }
 
 // NewNotifier 实现管理接口
