@@ -40,7 +40,7 @@ var tcpDetectorCreator detectorCreator = func(ctx context.Context, hp models.Hea
 	}
 	if len(dtr.address) >= 256 {
 		dtr.address = dtr.address[:255]
-		dtr.logger.Warnf("max target 256")
+		dtr.logger.Warnf("max target 256 reached")
 	}
 	return dtr, nil
 }
