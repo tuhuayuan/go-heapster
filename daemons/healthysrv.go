@@ -127,7 +127,7 @@ func (srv *HealthySrv) installHeapster(looper detectors.DetectLooper, alert aler
 func (srv *HealthySrv) uninstallHeapster(model models.Heapster) {
 	alert, ok := srv.alerts[model.ID]
 	if ok {
-		alert.TurnOn()
+		alert.TurnOff()
 		delete(srv.alerts, model.ID)
 	}
 	looper, ok := srv.loopers[model.ID]
