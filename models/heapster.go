@@ -18,7 +18,7 @@ type HealthyStatus string
 const (
 	HealthyStatusUnknown HealthyStatus = "unknown"
 	HealthyStatusGreen   HealthyStatus = "green"
-	HealthyStatusYelow   HealthyStatus = "yelow"
+	HealthyStatusYellow  HealthyStatus = "yellow"
 	HealthyStatusRed     HealthyStatus = "red"
 )
 
@@ -146,8 +146,8 @@ func (hst *Heapster) GetStatus(ctx context.Context) HealthyStatus {
 	switch HealthyStatus(status) {
 	case HealthyStatusRed:
 		return HealthyStatusRed
-	case HealthyStatusYelow:
-		return HealthyStatusYelow
+	case HealthyStatusYellow:
+		return HealthyStatusYellow
 	case HealthyStatusGreen:
 		return HealthyStatusGreen
 	default:

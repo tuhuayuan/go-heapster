@@ -125,7 +125,7 @@ func FetchErrorReports(ctx context.Context, reportFor LabelValue, last time.Dura
 }
 
 // FetchReportsAggregation 获取
-func FetchReportsAggregation(ctx context.Context, reportFor LabelValue, last time.Duration) (Reports, error) {
+func FetchReportsAggregation(ctx context.Context, reportFor LabelValue, from time.Time) (Reports, error) {
 	var reports Reports
 
 	client := middlewares.GetInfluxDB(ctx)
@@ -136,7 +136,7 @@ func FetchReportsAggregation(ctx context.Context, reportFor LabelValue, last tim
 		middlewares.GetInfluxDBName(ctx),
 		"RFC3339",
 		map[string]interface{}{
-			"last":     time.Now().Add(-last),
+			"last":     from,
 			"heapster": string(reportFor),
 		})
 	resp, err := client.Query(req)

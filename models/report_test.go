@@ -11,7 +11,7 @@ import (
 )
 
 func TestReportSave(t *testing.T) {
-	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
+	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "", "gamehealthy")
 	assert.NoError(t, err)
 
 	rps := Reports{
@@ -39,7 +39,7 @@ func TestReportSave(t *testing.T) {
 }
 
 func TestFetchErrorReports(t *testing.T) {
-	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
+	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "", "gamehealthy")
 	assert.NoError(t, err)
 
 	rps, err := FetchErrorReports(ctx, LabelValue("testreport1"), 100*time.Minute)
@@ -48,8 +48,8 @@ func TestFetchErrorReports(t *testing.T) {
 }
 
 func TestFetchReportsAggregation(t *testing.T) {
-	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "")
+	ctx, err := middlewares.WithInfluxDB(nil, "http://localhost:8086", "", "", "gamehealthy")
 	assert.NoError(t, err)
 
-	fmt.Println(FetchReportsAggregation(ctx, "testreport1", 100*time.Minute))
+	fmt.Println(FetchReportsAggregation(ctx, "testreport1", time.Now().Add(-100*time.Minute)))
 }

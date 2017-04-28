@@ -75,13 +75,13 @@ func (al *defaultAlert) TurnOn() error {
 			defer al.mtx.Unlock()
 			al.running = false
 		}()
-		// 计算采样间隔，放大一倍
+		// 计算采样间隔
 		threshold := float64(al.model.Threshold)
-		sampleInterval := time.Duration(threshold) * al.model.Interval
+		sampleInterval := time.Duration(al.model.Threshold)*al.model.Interval + al.model.Interval
 		// 警报器运行间隔固定
 		ticker := time.NewTicker(sampleInterval)
 		defer ticker.Stop()
-
+		startTime := time.Now()
 		for {
 			// 循环控制
 			select {
@@ -90,7 +90,9 @@ func (al *defaultAlert) TurnOn() error {
 			case <-ticker.C:
 			}
 			// 查询统计报告
-			rps, err := models.FetchReportsAggregation(al.ctx, models.LabelValue(al.model.ID), sampleInterval)
+			nextStart := time.Now()
+			rps, err := models.FetchReportsAggregation(al.ctx, models.LabelValue(al.model.ID), startTime)
+			startTime = nextStart
 			if err != nil || len(rps) == 0 {
 				if err := al.model.SetStatus(al.ctx, models.HealthyStatusUnknown); err != nil {
 					logger.Warnf("healthy status change pass. %v", err)
@@ -104,7 +106,8 @@ func (al *defaultAlert) TurnOn() error {
 					// 跳过这个报告
 					continue
 				}
-				if success < 0 && success <= threshold {
+				fmt.Println(success, ";", threshold)
+				if success < 0 && success <= -threshold {
 					// RED
 					curStatus = models.HealthyStatusRed
 					break
@@ -112,7 +115,7 @@ func (al *defaultAlert) TurnOn() error {
 					// GREEN
 				} else {
 					// YELLOW
-					curStatus = models.HealthyStatusYelow
+					curStatus = models.HealthyStatusYellow
 				}
 			}
 			if curStatus == models.HealthyStatusRed {
