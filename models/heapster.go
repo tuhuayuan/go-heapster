@@ -73,15 +73,13 @@ type Heapster struct {
 	Groups    []string      `json:"groups"`
 	Notifiers []string      `json:"notifiers"`
 	Mute      bool          `json:"mute"`
-	Version   int           `json:"version,omitempty"`
-	Status    HealthyStatus `json:"status,omitempty"`
 
-	// for http
-	AcceptCode []int  `json:"accept_code,omitempty"`
-	Host       string `json:"host,omitempty"`
-	Location   string `json:"location,omitempty"`
-
-	// TODO: for https
+	Version    int                    `json:"version,omitempty"`
+	Status     HealthyStatus          `json:"status,omitempty"`
+	AcceptCode []int                  `json:"accept_code,omitempty"`
+	Host       string                 `json:"host,omitempty"`
+	Location   string                 `json:"location,omitempty"`
+	Extra      map[string]interface{} `json:"extra,omitempty"`
 }
 
 // HeapsterStatusSet 状态集
@@ -92,6 +90,12 @@ type HeapsterStatusSet struct {
 
 // Heapsters 列表
 type Heapsters []Heapster
+
+func (h Heapsters) Len() int      { return len(h) }
+func (h Heapsters) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+func (h Heapsters) Less(i, j int) bool {
+	return h[i].Name < h[j].Name
+}
 
 // HeapsterSetKey 集合主键
 type HeapsterSetKey string

@@ -85,7 +85,7 @@ func FetchReportsAggs(ctx context.Context, heapster string, last time.Time) (Rep
 	aggsFaileds := elastic.NewSumAggregation().Field("failed")
 	aggsElapsed := elastic.NewMaxAggregation().Field("elapsed")
 	aggsTarget := elastic.NewTermsAggregation().
-		Field("target").OrderByTermAsc().
+		Field("target").Size(1000).OrderByTermAsc().
 		SubAggregation("success", aggsSuccess).
 		SubAggregation("faileds", aggsFaileds).
 		SubAggregation("max_delay", aggsElapsed)

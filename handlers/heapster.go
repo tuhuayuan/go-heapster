@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"sort"
 	"time"
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
@@ -179,7 +180,7 @@ func FetchHeapsterHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		hs = append(hs, *ht)
 	}
-
+	sort.Sort(hs)
 	data, err := json.Marshal(hs)
 	if err != nil {
 		middlewares.ErrorWrite(w, 200, 3, err)
