@@ -41,7 +41,7 @@ def deploy():
         run('sudo chmod u+x ' + BIN_NAME)
         run('sudo chown ' + user + ':' + group + ' ' + BIN_NAME)
 
-    put('./configs/test/default.json', targetDir["conf_dir"], use_sudo=True)
+    put('./configs/remote/default.json', targetDir["conf_dir"], use_sudo=True)
     put('./' + SERVICE_NAME, service, use_sudo=True)
     run('sudo systemctl enable ' + SERVICE_NAME)
 

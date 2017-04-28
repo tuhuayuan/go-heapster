@@ -4,7 +4,7 @@
             "type": "gamehealthysrv",
             "redis_host": "localhost:6379",
             "redis_password": "",
-            "redis_db": 11,
+            "redis_db": 0,
             "elastic_urls": [
                 "http://10.0.10.46:9200"
             ],
@@ -15,7 +15,7 @@
             "host": "0.0.0.0:5000",
             "redis_host": "localhost:6379",
             "redis_password": "",
-            "redis_db": 11,
+            "redis_db": 0,
             "elastic_urls": [
                 "http://10.0.10.46:9200"
             ],
