@@ -88,7 +88,7 @@ func (sms *smsNotifier) Send(ctx context.Context, report models.Report) error {
 	// 构建消息
 	tpl := fmt.Sprintf("%s提醒：%s需要%s请查阅%s",
 		"监控",
-		"("+hp.Name+")中的("+report.Target+")出现异常",
+		fmt.Sprintf("(%s)中的(%s)最近出现%d次异常", hp.Name, report.Target, report.Faileds),
 		"及时处理",
 		"监控报告")
 	// 发送超时默认5秒
