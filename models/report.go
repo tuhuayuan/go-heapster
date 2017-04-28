@@ -74,12 +74,11 @@ func (pls ProbeLogs) Save(ctx context.Context) error {
 }
 
 // FetchReportsAggs 获取统计报告
-func FetchReportsAggs(ctx context.Context, heapster string, last time.Duration) (Reports, error) {
+func FetchReportsAggs(ctx context.Context, heapster string, last time.Time) (Reports, error) {
 	conn := middlewares.GetElasticConn(ctx)
 	// 查询条件
 	queryHeapster := elastic.NewTermQuery("heapster", heapster)
-	queryTimestamp := elastic.NewRangeQuery("timestamp").
-		Gte(time.Now().Add(-last).Format(time.RFC3339))
+	queryTimestamp := elastic.NewRangeQuery("timestamp").Gte(last)
 	boolQuery := elastic.NewBoolQuery().Filter(queryHeapster, queryTimestamp)
 	// 聚集
 	aggsSuccess := elastic.NewSumAggregation().Field("success")
@@ -93,7 +92,7 @@ func FetchReportsAggs(ctx context.Context, heapster string, last time.Duration) 
 
 	// 最多检索3天前的数据
 	result, err := conn.Search("gamehealthy-*").
-		Type("probelog").From(0).Size(1000).
+		Type("probelog").From(0).Size(0).
 		Query(boolQuery).Aggregation("target", aggsTarget).
 		Do(ctx)
 	if err != nil {

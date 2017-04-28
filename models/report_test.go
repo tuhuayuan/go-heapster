@@ -38,5 +38,5 @@ func TestReportSave(t *testing.T) {
 func TestFetchReportsAggs(t *testing.T) {
 	ctx := middlewares.WithElasticConn(context.Background(), []string{"http://10.0.10.46:9200"}, "", "")
 
-	fmt.Println(FetchReportsAggs(ctx, "test_heapster_model", 100*time.Minute))
+	fmt.Println(FetchReportsAggs(ctx, "test_heapster_model", time.Now().Add(-100*time.Minute)))
 }
