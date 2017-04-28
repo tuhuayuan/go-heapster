@@ -45,6 +45,10 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 			dtr.reqs = append(dtr.reqs, req)
 		}
 	}
+	if len(dtr.reqs) >= 256 {
+		dtr.reqs = dtr.reqs[:255]
+		dtr.logger.Warnf("max target 256 reached")
+	}
 	return dtr, nil
 }
 
@@ -55,62 +59,42 @@ type httpDetector struct {
 	reqs   []*http.Request
 }
 
-func (dtr *httpDetector) plumb(ctx context.Context) models.ProbeLogs {
-	// 最大并行
-	const pageSize = 64
-	var (
-		total = len(dtr.reqs)
-		pages = int(total / pageSize)
-	)
+func (dtr *httpDetector) probe(ctx context.Context) models.ProbeLogs {
 	// 按照单次并发计算容量
-	probeLogs := make(models.ProbeLogs, 0, pageSize)
-	for i := 0; i <= pages; i++ {
-		select {
-		case <-ctx.Done():
-			// 结束
-			return probeLogs
-		default:
-		}
-		// 计算分页起始结束偏移
-		start := i * pageSize
-		end := start + pageSize
-		if i == pages {
-			end = start + total%pageSize
-		}
-		for _, req := range dtr.reqs[start:end] {
-			// 设置超时上下文
-			timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
-			dtr.wg.Add(1)
-			// 启动goroutine
-			go func(req *http.Request, ctx context.Context, cancel func()) {
-				defer dtr.wg.Done()
-				defer cancel()
-				// 准备报告
-				beginAt := time.Now()
-				probeLog := models.ProbeLog{
-					Heapster:  string(dtr.model.ID),
-					Target:    req.URL.String(),
-					Timestamp: beginAt,
-				}
-				// 测试连接
-				resp, err := http.DefaultClient.Do(req.WithContext(ctx))
-				probeLog.Elapsed = time.Now().Sub(beginAt)
-				if err != nil {
-					probeLog.Response = err.Error()
-					probeLog.Failed = 1
-				} else if !dtr.checkResponseCode(resp.StatusCode) {
-					probeLog.Response = fmt.Sprintf("http response code %d", resp.StatusCode)
-					probeLog.Failed = 1
-				} else {
-					probeLog.Response = "ok"
-					probeLog.Success = 1
-				}
-				// 添加日志
-				probeLogs = append(probeLogs, probeLog)
-			}(req, timeoutCtx, cancel)
-		}
-		dtr.wg.Wait()
+	probeLogs := make(models.ProbeLogs, 0, len(dtr.reqs))
+	for _, req := range dtr.reqs {
+		// 设置超时上下文
+		timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
+		dtr.wg.Add(1)
+		// 启动goroutine
+		go func(req *http.Request, ctx context.Context, cancel func()) {
+			defer dtr.wg.Done()
+			defer cancel()
+			// 准备报告
+			beginAt := time.Now()
+			probeLog := models.ProbeLog{
+				Heapster:  string(dtr.model.ID),
+				Target:    req.URL.String(),
+				Timestamp: beginAt,
+			}
+			// 测试连接
+			resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+			probeLog.Elapsed = time.Now().Sub(beginAt)
+			if err != nil {
+				probeLog.Response = err.Error()
+				probeLog.Failed = 1
+			} else if !dtr.checkResponseCode(resp.StatusCode) {
+				probeLog.Response = fmt.Sprintf("http response code %d", resp.StatusCode)
+				probeLog.Failed = 1
+			} else {
+				probeLog.Response = "ok"
+				probeLog.Success = 1
+			}
+			// 添加日志
+			probeLogs = append(probeLogs, probeLog)
+		}(req, timeoutCtx, cancel)
 	}
+	dtr.wg.Wait()
 	return probeLogs
 }
 

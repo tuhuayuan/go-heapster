@@ -21,7 +21,7 @@ type elasticTestData struct {
 
 func TestElasticConn(t *testing.T) {
 	ctx := httputil.WithHTTPContext(nil)
-	handler := httputil.HandleFunc(ctx, ElasticConnHandler([]string{"http://10.0.10.46:9200"}, "", ""),
+	handler := httputil.HandleFunc(ctx, ElasticConnHandler([]string{"http://localhost:9200"}, "", ""),
 		func(w http.ResponseWriter, r *http.Request) {
 			conn := GetElasticConn(r.Context())
 			// 健康测试

@@ -21,15 +21,13 @@ func GetElasticConn(ctx context.Context) *elastic.Client {
 	return ctx.Value(elasticContextConn).(*elastic.Client)
 }
 
-// WithElasticConn 获取带连接的上下文（需要自己关闭）
+// WithElasticConn 获取带连接的上下文
 func WithElasticConn(parent context.Context, hosts []string, user string, password string) context.Context {
-	conn, err := elastic.NewClient(
+	// 使用简单Client，暂时忽略错误
+	conn, _ := elastic.NewSimpleClient(
 		elastic.SetURL(hosts...),
 		elastic.SetBasicAuth(user, password),
 	)
-	if err != nil {
-		panic(err)
-	}
 	return context.WithValue(parent, elasticContextConn, conn)
 }
 
@@ -37,7 +35,7 @@ func WithElasticConn(parent context.Context, hosts []string, user string, passwo
 func ElasticConnHandler(hosts []string, user string, password string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		conn, err := elastic.NewClient(
+		conn, err := elastic.NewSimpleClient(
 			elastic.SetURL(hosts...),
 			elastic.SetBasicAuth(user, password),
 		)

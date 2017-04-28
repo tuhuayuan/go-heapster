@@ -94,8 +94,8 @@ func TestTCPPlumb(t *testing.T) {
 		time.Sleep(2 * time.Second)
 		plumbCancel()
 	}()
-	fmt.Println(d.plumb(plumbCtx))
-	fmt.Println(d.plumb(plumbCtx))
+	fmt.Println(d.probe(plumbCtx))
+	fmt.Println(d.probe(plumbCtx))
 
 	serverCancel()
 	<-serverCtx.Done()

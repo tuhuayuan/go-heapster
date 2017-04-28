@@ -78,7 +78,7 @@ func TestHTTPPlumb(t *testing.T) {
 
 	d, err := httpDetectorCreator(ctx, hp)
 	assert.NoError(t, err)
-	fmt.Println(d.plumb(context.Background()))
+	fmt.Println(d.probe(context.Background()))
 
 	serverCancel()
 	<-serverCtx.Done()
@@ -111,5 +111,5 @@ func TestHttpWithHost(t *testing.T) {
 
 	d, err := httpDetectorCreator(ctx, hp)
 	assert.NoError(t, err)
-	fmt.Println(d.plumb(context.Background()))
+	fmt.Println(d.probe(context.Background()))
 }

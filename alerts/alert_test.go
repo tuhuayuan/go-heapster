@@ -24,8 +24,7 @@ func TestDefaultAlert(t *testing.T) {
 	}
 	ctx := middlewares.WithRedisConn(context.Background(), "localhost:6379", "", 1)
 	ctx = middlewares.WithLogger(ctx, 5, os.Stdout)
-	ctx = middlewares.WithElasticConn(ctx, []string{"http://10.0.10.46:9200"}, "", "")
-
+	ctx = middlewares.WithElasticConn(ctx, []string{"http://localhost:9200"}, "", "")
 	assert.NoError(t, hp.Save(ctx))
 
 	al, err := NewAlert(ctx, hp)

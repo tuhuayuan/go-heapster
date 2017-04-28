@@ -24,7 +24,7 @@ func init() {
 type testDetector struct {
 }
 
-func (td *testDetector) plumb(ctx context.Context) models.ProbeLogs {
+func (td *testDetector) probe(ctx context.Context) models.ProbeLogs {
 	select {
 	case <-ctx.Done():
 		fmt.Println("cancel")
