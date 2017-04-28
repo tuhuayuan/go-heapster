@@ -29,9 +29,9 @@ func TestUnicomSend(t *testing.T) {
 
 func TestUnicomReceipts(t *testing.T) {
 	config := UnicomConfig{
-		SPCode:   "",
-		Username: "",
-		Password: "",
+		SPCode:   "103905",
+		Username: "zz_sj",
+		Password: "www.zonst.org",
 	}
 	p, err := CreateSMSProvider("unicom", config)
 	assert.NoError(t, err)
@@ -41,9 +41,9 @@ func TestUnicomReceipts(t *testing.T) {
 
 func TestSMSHelper(t *testing.T) {
 	config := UnicomConfig{
-		SPCode:   "",
-		Username: "",
-		Password: "",
+		SPCode:   "103905",
+		Username: "zz_sj",
+		Password: "www.zonst.org",
 	}
 	ctx := httputil.WithHTTPContext(nil)
 	handler := httputil.HandleFunc(ctx,
