@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"sync"
 	"time"
 
 	"github.com/Sirupsen/logrus"
 
+	"sync"
 	"zonst/qipai/gamehealthysrv/middlewares"
 	"zonst/qipai/gamehealthysrv/models"
 )
@@ -48,20 +48,21 @@ var tcpDetectorCreator detectorCreator = func(ctx context.Context, hp models.Hea
 type tcpDetector struct {
 	model   models.Heapster
 	logger  *logrus.Logger
-	wg      sync.WaitGroup
 	address []*net.TCPAddr
 }
 
 func (dtr *tcpDetector) probe(ctx context.Context) models.ProbeLogs {
-	// 按照单次并发计算容量
-	probeLogs := make(models.ProbeLogs, 0, len(dtr.address))
+	var (
+		probeLogs = make(models.ProbeLogs, 0, len(dtr.address))
+		wg        sync.WaitGroup
+	)
 	for _, addr := range dtr.address {
 		// 设置超时上下文
 		timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
-		dtr.wg.Add(1)
+		wg.Add(1)
 		// 启动goroutine
 		go func(addr *net.TCPAddr, ctx context.Context, cancel func()) {
-			defer dtr.wg.Done()
+			defer wg.Done()
 			defer cancel()
 			// 准备报告
 			beginAt := time.Now()
@@ -86,6 +87,6 @@ func (dtr *tcpDetector) probe(ctx context.Context) models.ProbeLogs {
 			probeLogs = append(probeLogs, probeLog)
 		}(addr, timeoutCtx, cancel)
 	}
-	dtr.wg.Wait()
+	wg.Wait()
 	return probeLogs
 }

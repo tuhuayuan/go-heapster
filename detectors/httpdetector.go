@@ -55,20 +55,21 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 type httpDetector struct {
 	model  models.Heapster
 	logger *logrus.Logger
-	wg     sync.WaitGroup
 	reqs   []*http.Request
 }
 
 func (dtr *httpDetector) probe(ctx context.Context) models.ProbeLogs {
-	// 按照单次并发计算容量
-	probeLogs := make(models.ProbeLogs, 0, len(dtr.reqs))
+	var (
+		probeLogs = make(models.ProbeLogs, 0, len(dtr.reqs))
+		wg        sync.WaitGroup
+	)
 	for _, req := range dtr.reqs {
 		// 设置超时上下文
 		timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(dtr.model.Timeout))
-		dtr.wg.Add(1)
+		wg.Add(1)
 		// 启动goroutine
 		go func(req *http.Request, ctx context.Context, cancel func()) {
-			defer dtr.wg.Done()
+			defer wg.Done()
 			defer cancel()
 			// 准备报告
 			beginAt := time.Now()
@@ -94,7 +95,7 @@ func (dtr *httpDetector) probe(ctx context.Context) models.ProbeLogs {
 			probeLogs = append(probeLogs, probeLog)
 		}(req, timeoutCtx, cancel)
 	}
-	dtr.wg.Wait()
+	wg.Wait()
 	return probeLogs
 }
 
