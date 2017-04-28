@@ -63,7 +63,7 @@ func (pls ProbeLogs) Save(ctx context.Context) error {
 		doc.Timestamp = time.Now()
 
 		_, err := conn.Index().
-			Index("<gamehealthy-{now/d}>").
+			Index("<gamehealthy-{now/d{YYYY.MM.dd|+08:00}}>").
 			Type("probelog").
 			BodyJson(doc).Do(ctx)
 		if err != nil {
