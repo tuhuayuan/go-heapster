@@ -76,7 +76,7 @@ func (al *defaultAlert) TurnOn() error {
 			al.running = false
 		}()
 		// 查询报告间隔
-		sampleInterval := time.Duration(al.model.Threshold) * al.model.Interval
+		sampleInterval := time.Duration(al.model.Threshold)*al.model.Interval + al.model.Interval
 		ticker := time.NewTicker(sampleInterval)
 		defer ticker.Stop()
 		// 循环查询报告
@@ -95,7 +95,6 @@ func (al *defaultAlert) TurnOn() error {
 				continue
 			}
 			// 处理报告
-			fmt.Println(rps)
 			for _, rp := range rps {
 				if rp.Faileds >= al.model.Threshold {
 					// RED
