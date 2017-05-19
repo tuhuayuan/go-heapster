@@ -9,13 +9,7 @@ import:
   repo: http://git.xq5.com:/qipai-apisrv/logagent.git
   vcs: git
   subpackages:
-  - output/elastic
-  - output/stdout
   - utils
-- package: github.com/influxdata/influxdb
-  version: ^1.2.2
-  subpackages:
-  - client/v2
 - package: gopkg.in/olivere/elastic.v5
 testImport:
 - package: github.com/stretchr/testify

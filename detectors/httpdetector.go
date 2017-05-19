@@ -30,7 +30,11 @@ var httpDetectorCreator detectorCreator = func(ctx context.Context, hp models.He
 	for _, g := range groups {
 		eps := g.Endpoints.Unfold().Exclude(g.Excluded)
 		for _, ep := range eps {
-			epURL := fmt.Sprintf("http://%s:%d", string(ep), hp.Port)
+			proto := "http"
+			if hp.Port == 443 {
+				proto = "https"
+			}
+			epURL := fmt.Sprintf("%s://%s:%d", proto, string(ep), hp.Port)
 			if hp.Location != "" {
 				epURL += hp.Location
 			}
